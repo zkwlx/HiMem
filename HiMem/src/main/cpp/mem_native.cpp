@@ -10,17 +10,19 @@
 
 #include "mem_hook.h"
 #include "mem_native.h"
-#include "runtime.h"
-#include "unwinder.h"
+#include "fb_unwinder/runtime.h"
+#include "fb_unwinder/unwinder.h"
+#include "clooper/looper.h"
 
 extern "C" {
 #include "log.h"
 }
 
+//#define SIZE_THRESHOLD 1024
 #define SIZE_THRESHOLD 1040384
 
-JavaVM *g_vm = NULL;
-jobject g_obj = NULL;
+JavaVM *g_vm = nullptr;
+jobject g_obj = nullptr;
 
 void setEnv(JNIEnv *env, jobject obj) {
     // 保存全局 vm 引用，以便在子线程中使用
@@ -37,18 +39,40 @@ void setDebug(JNIEnv *env, jobject thiz, jint enable) {
     set_hook_debug(enable);
 }
 
+static message_looper_t *looper;
+
+void handle(message_t *msg) {
+    LOGI(" -----> %s", (char *) msg->data);
+}
+
+void looper_start() {
+    looper = looperCreate(handle);
+    if (looper == nullptr) {
+        LOGI("looperCreate fail!!!!!!!!!");
+        return;
+    }
+    if (looperStart(looper) == LOOPER_START_THREAD_ERROR) {
+        LOGI("looperStart thread create fail!!!!!!!!!");
+        looperDestroy(&looper);
+        return;
+    }
+}
+
+void looper_destroy() {
+    looperDestroy(&looper);
+}
+
 void init(JNIEnv *env, jobject thiz) {
     // set global env
     setEnv(env, thiz);
+    looper_start();
     do_hook();
 }
 
 void deInit(JNIEnv *env, jobject thiz) {
     clear_hook();
+    looper_destroy();
     clearEnv(env);
-}
-
-void stackTest(JNIEnv *env, jobject thiz) {
 }
 
 void onMmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset) {
@@ -61,9 +85,9 @@ void onMmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset
         // 非 JVM 触发的分配，警告
         LOGE("MMAP GetEnv Fail!!!>> addr: %p, length: %u", addr, length);
     }
-    std::map<void *, char *> maps;
-    maps[addr] = "xxxxxxx";
-    maps.erase(addr);
+//    std::map<void *, char *> maps;
+//    maps[addr] = "xxxxxxx";
+//    maps.erase(addr);
     stack();
 }
 
@@ -110,10 +134,9 @@ void callJava(void *addr, size_t length, int prot, int flags, int fd, off_t offs
 }
 
 static JNINativeMethod methods[] = {
-        {"setDebug",  "(I)V", (void *) setDebug},
-        {"init",      "()V",  (void *) init},
-        {"deInit",    "()V",  (void *) deInit},
-        {"stackTest", "()V",  (void *) stackTest}
+        {"setDebug", "(I)V", (void *) setDebug},
+        {"init",     "()V",  (void *) init},
+        {"deInit",   "()V",  (void *) deInit}
 };
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {

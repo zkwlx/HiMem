@@ -6,7 +6,7 @@
 #include <string>
 #include <pthread.h>
 
-#include "log.h"
+#include "../log.h"
 #include "runtime.h"
 
 uintptr_t get_art_thread() {

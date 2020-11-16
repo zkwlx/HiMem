@@ -10,8 +10,6 @@ object MemNative {
 
     external fun deInit()
 
-    external fun stackTest()
-
     fun onMmap(addr: Long, length: Long, prot: Int, flags: Int, fd: Int, offset: Long) {
         Log.i(
             "zkw",

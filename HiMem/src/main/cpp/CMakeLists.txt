@@ -5,39 +5,48 @@
 
 cmake_minimum_required(VERSION 3.4.1)
 
-# 将当前 "./src/main/cpp" 目录下的所有源文件保存到 "NATIVE_SRC" 中，然后在 add_library 方法调用。
-aux_source_directory(./src/main/cpp NATIVE_SRC)
-aux_source_directory(./src/main/cpp/clooper LOOPER_SRC)
-aux_source_directory(./src/main/cpp/handler HANDLER_SRC)
-aux_source_directory(src/main/cpp/common COMMON_SRC)
-
 # Creates and names a library, sets it as either STATIC
 # or SHARED, and provides the relative paths to its source code.
 # You can define multiple libraries, and CMake builds them for you.
 # Gradle automatically packages shared libraries with your APK.
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -frtti -Wall -Wno-unused-parameter -Wno-unused-variable -Wno-shift-count-overflow -Wno-error=non-virtual-dtor -Wno-sign-compare -Wno-switch -Wno-missing-braces")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -frtti")
 
-# ---------- dex_slicer 依赖
-#aux_source_directory(src/main/cpp/dex_slicer DEX_SLICER_SRC)
-#add_library(
-#        dex_slicer
-#        STATIC
-#        ${DEX_SLICER_SRC})
-#include_directories(src/main/cpp/dex_slicer/export/)
-#target_link_libraries(dex_slicer z)
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -frtti")
+
+add_library(
+        xhook
+
+        STATIC
+
+        xhook/xh_core.c
+        xhook/xh_elf.c
+        xhook/xh_jni.c
+        xhook/xh_log.c
+        xhook/xh_util.c
+        xhook/xh_version.c
+        xhook/xhook.c
+)
+
+add_library(
+        clooper
+
+        STATIC
+
+        clooper/looper.cpp
+        clooper/looper_test.cpp
+)
 
 add_library( # Sets the name of the library.
-        adi_agent
+        mem-native
 
         # Sets the library as a shared library.
         SHARED
 
         # Provides a relative path to your source file(s).
-        ${NATIVE_SRC}
-        ${LOOPER_SRC}
-        ${HANDLER_SRC}
-        ${COMMON_SRC}
+        mem_native.cpp
+        object_helper.cpp
+        mem_hook.cpp
+        fb_unwinder/runtime.cpp
+        fb_unwinder/unwinder.cpp
         )
 
 # Searches for a specified prebuilt library and stores the path as a
@@ -56,9 +65,14 @@ find_library( # Sets the name of the path variable.
 # Specifies libraries CMake should link to your target library. You
 # can link multiple libraries, such as libraries you define in this
 # build script, prebuilt third-party libraries, or system libraries.
-target_link_libraries(
-        # Specifies the target library.
-        adi_agent
+
+target_link_libraries( # Specifies the target library.
+        mem-native
+
         # Links the target library to the log library
         # included in the NDK.
-        ${log-lib})
+        ${log-lib}
+
+        xhook
+
+        clooper)

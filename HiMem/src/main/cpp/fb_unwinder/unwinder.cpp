@@ -3,7 +3,7 @@
 #include <pthread.h>
 #include "runtime.h"
 
-#include "log.h"
+#include "../log.h"
 #include "unwinder.h"
 
 struct OatMethod {
@@ -754,7 +754,7 @@ bool unwind_cb(uintptr_t frame, void *data) {
     return true;
 }
 
-#define MAX_STACK_DEPTH 5
+#define MAX_STACK_DEPTH 512
 
 // 启动消息队列
 // 当发生 mmap 时，将解析出的堆栈和地址等信息保存到 结构体

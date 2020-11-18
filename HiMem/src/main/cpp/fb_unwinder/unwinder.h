@@ -5,6 +5,8 @@
 #ifndef MEMORY_UNWINDER_H
 #define MEMORY_UNWINDER_H
 
+#define STACK_ELEMENT_DIV "|"
+
 typedef bool (*unwind_callback_t)(uintptr_t, void *);
 
 struct unwinder_data {
@@ -26,6 +28,6 @@ string_t get_class_descriptor(uintptr_t cls);
 
 uint64_t get_method_trace_id(uintptr_t method);
 
-bool stack();
+bool obtainStack(std::string& stack);
 
 #endif //MEMORY_UNWINDER_H

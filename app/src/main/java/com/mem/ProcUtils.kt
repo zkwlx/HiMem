@@ -25,7 +25,12 @@ object ProcUtils {
 
 
     /**
-     * 示例：
+     * 获取 /proc/[pid]/maps 内容，例如：
+     * ```
+     * 7234c000-7235f000 r--p 00000000 fc:00 1499          /system/framework/x86/boot-conscrypt.oat
+     * 7235f000-72390000 r-xp 00013000 fc:00 1499          /system/framework/x86/boot-conscrypt.oat
+     * 72390000-72391000 rw-p 00000000 00:00 0             [anon:.bss]
+     * ```
      */
     fun getPidMaps(): String {
         var content = ""

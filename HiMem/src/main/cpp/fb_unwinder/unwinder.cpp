@@ -1,6 +1,7 @@
 #include <jni.h>
 #include <string>
 #include <pthread.h>
+#include <cstdlib>
 #include "runtime.h"
 
 #include "../log.h"
@@ -735,6 +736,8 @@ bool unwind(unwind_callback_t _unwind_callback, void *_unwind_data) {
     return true;
 }
 
+#define MAX_STACK_DEPTH 512
+
 bool unwind_cb(uintptr_t frame, void *data) {
     auto *ud = reinterpret_cast<unwinder_data *>(data);
     if (ud->depth >= ud->max_depth) {
@@ -754,17 +757,7 @@ bool unwind_cb(uintptr_t frame, void *data) {
     return true;
 }
 
-#define MAX_STACK_DEPTH 512
-
-// 启动消息队列
-// 当发生 mmap 时，将解析出的堆栈和地址等信息保存到 结构体
-// 将结构体发送给消息队列
-// 队列的消费者取出结构体放到 map
-// 当发生 munmap 时同样创建结构体并发给队列
-// 消费者取出后删除 map 对应的内容
-// 当需要时，取出所有 map 上报或分析
-
-bool stack() {
+bool obtainStack(std::string &stack) {
     int64_t frames[MAX_STACK_DEPTH]; // frame pointer addresses
     char const *method_names[MAX_STACK_DEPTH];
     char const *class_descriptors[MAX_STACK_DEPTH];
@@ -780,9 +773,11 @@ bool stack() {
     };
     if (unwind(&unwind_cb, &data)) {
         for (int i = 0; i < data.depth; i++) {
-            LOGI("at  %s.%s", data.class_descriptors[i], data.method_names[i]);
+            std::string desc = data.class_descriptors[i];
+            stack.append(desc.substr(1, desc.size() - 2))
+                    .append(".").append(data.method_names[i]).append(STACK_ELEMENT_DIV);
         }
-        LOGI("unwind success!!!");
+        LOGI("unwind success!!!:%d", stack.length());
         return true;
     } else {
         LOGI("unwind failed!!!!");

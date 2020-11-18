@@ -12,14 +12,14 @@
 #include "mem_native.h"
 #include "fb_unwinder/runtime.h"
 #include "fb_unwinder/unwinder.h"
-#include "clooper/looper.h"
+#include "mmap_tracer.h"
 
 extern "C" {
 #include "log.h"
 }
 
-//#define SIZE_THRESHOLD 1024
-#define SIZE_THRESHOLD 1040384
+#define SIZE_THRESHOLD 1024
+//#define SIZE_THRESHOLD 1040384
 
 JavaVM *g_vm = nullptr;
 jobject g_obj = nullptr;
@@ -39,40 +39,23 @@ void setDebug(JNIEnv *env, jobject thiz, jint enable) {
     set_hook_debug(enable);
 }
 
-static message_looper_t *looper;
-
-void handle(message_t *msg) {
-    LOGI(" -----> %s", (char *) msg->data);
-}
-
-void looper_start() {
-    looper = looperCreate(handle);
-    if (looper == nullptr) {
-        LOGI("looperCreate fail!!!!!!!!!");
-        return;
-    }
-    if (looperStart(looper) == LOOPER_START_THREAD_ERROR) {
-        LOGI("looperStart thread create fail!!!!!!!!!");
-        looperDestroy(&looper);
-        return;
-    }
-}
-
-void looper_destroy() {
-    looperDestroy(&looper);
-}
-
-void init(JNIEnv *env, jobject thiz) {
+void init(JNIEnv *env, jobject thiz, jstring dumpDir) {
     // set global env
     setEnv(env, thiz);
-    looper_start();
+    char *dumpDirChar = const_cast<char *>(env->GetStringUTFChars(dumpDir, JNI_FALSE));
+    tracerStart(dumpDirChar);
+    env->ReleaseStringUTFChars(dumpDir, dumpDirChar);
     do_hook();
 }
 
 void deInit(JNIEnv *env, jobject thiz) {
     clear_hook();
-    looper_destroy();
+    tracerDestroy();
     clearEnv(env);
+}
+
+void memDump(JNIEnv *env, jobject thiz) {
+    dumpToFile();
 }
 
 void onMmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset) {
@@ -85,10 +68,19 @@ void onMmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset
         // 非 JVM 触发的分配，警告
         LOGE("MMAP GetEnv Fail!!!>> addr: %p, length: %u", addr, length);
     }
-//    std::map<void *, char *> maps;
-//    maps[addr] = "xxxxxxx";
-//    maps.erase(addr);
-    stack();
+    std::string stack;
+    obtainStack(stack);
+
+    mmap_info info{
+            .address = reinterpret_cast<uintptr_t>(addr),
+            .length = length,
+            .prot = prot,
+            .flag = flags,
+            .fd = fd,
+            .offset = offset,
+            .stack = stack,
+    };
+    postOnMmap(&info);
 }
 
 void callOnMmap64(void *addr, size_t length, int prot, int flags, int fd, off_t offset) {
@@ -112,7 +104,12 @@ void callOnMunmap(void *addr, size_t length) {
     if (g_vm->GetEnv((void **) &env, JNI_VERSION_1_6) != JNI_OK || env == nullptr) {
         LOGE("MUNMAP GetEnv Fail!!!>> addr: %p, length: %ld", addr, length);
     }
-    stack();
+
+    munmap_info info{
+            .address = reinterpret_cast<uintptr_t>(addr),
+            .length = length,
+    };
+    postOnMunmap(&info);
 }
 
 void callJava(void *addr, size_t length, int prot, int flags, int fd, off_t offset) {
@@ -134,9 +131,10 @@ void callJava(void *addr, size_t length, int prot, int flags, int fd, off_t offs
 }
 
 static JNINativeMethod methods[] = {
-        {"setDebug", "(I)V", (void *) setDebug},
-        {"init",     "()V",  (void *) init},
-        {"deInit",   "()V",  (void *) deInit}
+        {"setDebug", "(I)V",                  (void *) setDebug},
+        {"init",     "(Ljava/lang/String;)V", (void *) init},
+        {"deInit",   "()V",                   (void *) deInit},
+        {"memDump",  "()V",                   (void *) memDump},
 };
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {

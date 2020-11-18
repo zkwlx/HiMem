@@ -43,10 +43,10 @@ add_library( # Sets the name of the library.
 
         # Provides a relative path to your source file(s).
         mem_native.cpp
-        object_helper.cpp
         mem_hook.cpp
         fb_unwinder/runtime.cpp
         fb_unwinder/unwinder.cpp
+        mmap_tracer.cpp
         )
 
 # Searches for a specified prebuilt library and stores the path as a
@@ -60,7 +60,8 @@ find_library( # Sets the name of the path variable.
 
         # Specifies the name of the NDK library that
         # you want CMake to locate.
-        log)
+        log
+        )
 
 # Specifies libraries CMake should link to your target library. You
 # can link multiple libraries, such as libraries you define in this

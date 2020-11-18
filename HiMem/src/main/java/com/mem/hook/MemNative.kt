@@ -6,9 +6,11 @@ object MemNative {
 
     external fun setDebug(enable: Int)
 
-    external fun init()
+    external fun init(dumpDir:String)
 
     external fun deInit()
+
+    external fun memDump()
 
     fun onMmap(addr: Long, length: Long, prot: Int, flags: Int, fd: Int, offset: Long) {
         Log.i(

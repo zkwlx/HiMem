@@ -27,9 +27,8 @@ class MainActivity : AppCompatActivity() {
 
 
     fun onButtonClick(view: View) {
-        val cacheDir = externalCacheDir
 //        MemTest.stringFromJNI()
-//        File(cacheDir, "pmapBefore.txt").writeText(ProcUtils.getPmap())
+//        File(externalCacheDir, "pmapBefore.txt").writeText(ProcUtils.getPmap())
 //        repeat(5) {
 //            Log.i("zkw", "------> $it")
 //            thread {
@@ -38,7 +37,7 @@ class MainActivity : AppCompatActivity() {
 //            }
 //        }
         val length = 512L * 1024 * 1024
-        val file = File(cacheDir, "xxxxx.txt")
+        val file = File(externalCacheDir, "xxxxx.txt")
         file.createNewFile()
         FileChannel.open(
             Paths.get(file.toURI()),
@@ -49,8 +48,13 @@ class MainActivity : AppCompatActivity() {
                 mapBuffer.put(0.toByte())
             }
         }
-        Thread.sleep(1000)
-//        File(cacheDir, "pmapAfter.txt").writeText(ProcUtils.getPmap())
+//        Thread.sleep(1000)
+//        File(externalCacheDir, "pmapAfter.txt").writeText(ProcUtils.getPmap())
+    }
+
+    fun onDumpClick(view: View) {
+        MemNative.deInit()
+        File(externalCacheDir, "pmaps.txt").writeText(ProcUtils.getPmap())
     }
 
 }

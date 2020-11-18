@@ -42,7 +42,7 @@ void do_hook() {
 //    xhook_register("^/vendor/.*$", "mmap", my_mmap, NULL);
 //    xhook_register("^/sys/kernel", "mmap", my_mmap, NULL);
 //    xhook_register("^/vendor/.*$", "munmap", my_munmap, NULL);
-    xhook_register(".*", "mmap", (void *) my_mmap, NULL);
+//    xhook_register(".*", "mmap", (void *) my_mmap, NULL);
     xhook_register(".*", "mmap64", (void *) my_mmap64, NULL);
     xhook_register(".*", "munmap", (void *) my_munmap, NULL);
 //    xhook_register(".*/libart.so$", "mmap", my_mmap, NULL);

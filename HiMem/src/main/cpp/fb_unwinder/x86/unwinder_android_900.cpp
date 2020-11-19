@@ -1,11 +1,11 @@
 #include <jni.h>
 #include <string>
-#include <pthread.h>
 #include <cstdlib>
-#include "runtime.h"
+#include "../runtime.h"
 
-#include "../log.h"
-#include "unwinder.h"
+#include "../../log.h"
+#include "unwinder_android_900.h"
+
 
 struct OatMethod {
     uintptr_t begin_uintptr;
@@ -73,7 +73,7 @@ auto get_dexfile_string_by_idx(uintptr_t dexfile, uintptr_t idx) {
     return String(result);
 }
 
-uint32_t get_declaring_class(uintptr_t method) {
+auto get_declaring_class_900(uintptr_t method) -> uint32_t {
     uintptr_t declaring_class_gc_root = AccessField(method, 0U);
     uintptr_t declaring_class_ref = AccessField(declaring_class_gc_root, 0U);
     uint32_t declaring_class_ptr = Read4(AccessField(declaring_class_ref, 0U));
@@ -81,8 +81,8 @@ uint32_t get_declaring_class(uintptr_t method) {
     return declaring_class;
 }
 
-uint64_t get_method_trace_id(uintptr_t method) {
-    auto cls = get_declaring_class(method);
+auto get_method_trace_id_900(uintptr_t method) -> uint64_t {
+    auto cls = get_declaring_class_900(method);
     auto dexfile = get_class_dexfile(cls);
     uintptr_t signature = AccessField(Read4(AccessField(dexfile, 36U)), 12U);
     uint32_t dex_id = Read4(signature);
@@ -91,8 +91,8 @@ uint64_t get_method_trace_id(uintptr_t method) {
     return GetMethodTraceId(dex_id, method_id);
 }
 
-string_t get_method_name(uintptr_t method) {
-    auto cls = get_declaring_class(method);
+auto get_method_name_900(uintptr_t method) -> string_t {
+    auto cls = get_declaring_class_900(method);
     auto dexfile = get_class_dexfile(cls);
     uint32_t dex_method_index = Read4(AccessField(method, 12U));
     uintptr_t method_id =
@@ -102,7 +102,7 @@ string_t get_method_name(uintptr_t method) {
     return get_dexfile_string_by_idx(dexfile, name_idx);
 }
 
-string_t get_class_descriptor(uintptr_t cls) {
+auto get_class_descriptor_900(uintptr_t cls) -> string_t {
     auto dexfile = get_class_dexfile(cls);
     uint32_t typeidx = Read4(AccessField(cls, 84U));
     uintptr_t typeid_ =
@@ -113,7 +113,7 @@ string_t get_class_descriptor(uintptr_t cls) {
 }
 
 auto get_method_shorty(uintptr_t method) {
-    auto cls = get_declaring_class(method);
+    auto cls = get_declaring_class_900(method);
     auto dexfile = get_class_dexfile(cls);
     uint32_t dex_method_index = Read4(AccessField(method, 12U));
     uintptr_t method_id =
@@ -144,7 +144,7 @@ auto is_runtime_method(uintptr_t method) {
 }
 
 auto is_proxy_method(uintptr_t method) {
-    auto declaring_class = get_declaring_class(method);
+    auto declaring_class = get_declaring_class_900(method);
     uint32_t class_access_flags = Read4(AccessField(declaring_class, 64U));
     uintptr_t kAccClassIsProxy = 262144U;
     return (class_access_flags & kAccClassIsProxy) != 0;
@@ -475,7 +475,7 @@ auto get_virtual_methods(
 
 auto find_oat_method_for(uintptr_t method, uintptr_t runtime_obj) {
     uintptr_t oat_method_index = 0U;
-    auto cls = get_declaring_class(method);
+    auto cls = get_declaring_class_900(method);
     if ((is_static_method(method) || is_direct_method(method))) {
         oat_method_index = Read2(AccessField(method, 16U));
     } else {
@@ -518,7 +518,7 @@ auto get_oat_pointer(
     return AdvancePointer(begin, (offset * 1U));
 }
 
-uintptr_t get_code_offset(struct OatMethod const &struct_OatMethod) {
+auto get_code_offset(struct OatMethod const &struct_OatMethod) {
     uintptr_t oat_method_offset = struct_OatMethod.offset_uintptr;
     auto code = get_oat_pointer(struct_OatMethod, oat_method_offset);
     code = (code & (~1U));
@@ -542,7 +542,7 @@ auto get_quick_code(struct OatMethod const &struct_OatMethod) {
     return quick_code;
 }
 
-uintptr_t get_oat_quick_method_header(
+auto get_oat_quick_method_header(
         uintptr_t method,
         uintptr_t runtime_obj,
         uintptr_t thread_obj,
@@ -572,7 +572,7 @@ uintptr_t get_oat_quick_method_header(
             return 0U;
         }
     }
-    uintptr_t oat_entry_point = get_quick_code(oat_method);
+    auto oat_entry_point = get_quick_code(oat_method);
     if (((oat_entry_point == 0U) ||
          is_quick_generic_jni_stub(oat_entry_point, runtime_obj, thread_obj))) {
         return 0U;
@@ -666,7 +666,8 @@ auto get_frame_size(
     return size;
 }
 
-bool unwind(unwind_callback_t _unwind_callback, void *_unwind_data) {
+auto unwind_900(unwind_callback_t _unwind_callback, void *_unwind_data) -> bool {
+    LOGI("========================= unwind x86 900");
     uintptr_t thread = get_art_thread();
     if (thread == 0U) {
         return true;
@@ -735,53 +736,3 @@ bool unwind(unwind_callback_t _unwind_callback, void *_unwind_data) {
     }
     return true;
 }
-
-#define MAX_STACK_DEPTH 512
-
-bool unwind_cb(uintptr_t frame, void *data) {
-    auto *ud = reinterpret_cast<unwinder_data *>(data);
-    if (ud->depth >= ud->max_depth) {
-        // stack overflow, stop the traversal
-        return false;
-    }
-    ud->frames[ud->depth] = get_method_trace_id(frame);
-    //TODO 这里是否可以优化为需要的时候再解析
-    if (ud->method_names != nullptr && ud->class_descriptors != nullptr) {
-        auto declaring_class = get_declaring_class(frame);
-        auto class_string_t = get_class_descriptor(declaring_class);
-        string_t method_string_t = get_method_name(frame);
-        ud->method_names[ud->depth] = method_string_t.data;
-        ud->class_descriptors[ud->depth] = class_string_t.data;
-    }
-    ++ud->depth;
-    return true;
-}
-
-bool obtainStack(std::string &stack) {
-    int64_t frames[MAX_STACK_DEPTH]; // frame pointer addresses
-    char const *method_names[MAX_STACK_DEPTH];
-    char const *class_descriptors[MAX_STACK_DEPTH];
-    memset(method_names, 0, sizeof(method_names));
-    memset(class_descriptors, 0, sizeof(class_descriptors));
-    unwinder_data data{
-            .ucontext = nullptr,
-            .frames = frames,
-            .method_names = method_names,
-            .class_descriptors = class_descriptors,
-            .depth = 0,
-            .max_depth = MAX_STACK_DEPTH,
-    };
-    if (unwind(&unwind_cb, &data)) {
-        for (int i = 0; i < data.depth; i++) {
-            std::string desc = data.class_descriptors[i];
-            stack.append(desc.substr(1, desc.size() - 2))
-                    .append(".").append(data.method_names[i]).append(STACK_ELEMENT_DIV);
-        }
-        LOGI("unwind success!!!:%d", stack.length());
-        return true;
-    } else {
-        LOGI("unwind failed!!!!");
-        return false;
-    }
-}
-

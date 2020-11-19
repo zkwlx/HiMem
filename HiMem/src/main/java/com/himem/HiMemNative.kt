@@ -1,8 +1,8 @@
-package com.mem.hook
+package com.himem
 
 import android.util.Log
 
-object MemNative {
+object HiMemNative {
 
     external fun setDebug(enable: Int)
 
@@ -43,6 +43,6 @@ object MemNative {
 
     // Used to load the 'native-lib' library on application startup.
     init {
-        System.loadLibrary("mem-native")
+        System.loadLibrary("himem-native")
     }
 }

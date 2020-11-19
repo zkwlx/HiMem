@@ -63,7 +63,7 @@ void do_hook() {
 //    xhook_register(".so library", "printf", my_printf, (void*)&orig_printf);
 
     // 不要 hook 我们自己
-    xhook_ignore(".*/libmem-native.so$", NULL);
+    xhook_ignore(".*/libhimem-native.so$", NULL);
     xhook_ignore(".*/liblog.so$", NULL);
     // 启动 hook 机制
     xhook_enable_debug(1);

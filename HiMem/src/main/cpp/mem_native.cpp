@@ -11,8 +11,8 @@
 #include "mem_hook.h"
 #include "mem_native.h"
 #include "fb_unwinder/runtime.h"
-#include "fb_unwinder/unwinder.h"
 #include "mmap_tracer.h"
+#include "mem_stack.h"
 
 extern "C" {
 #include "log.h"
@@ -142,7 +142,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     if (vm->GetEnv((void **) &env, JNI_VERSION_1_6) != JNI_OK) {
         return JNI_ERR;
     }
-    jclass clazz = env->FindClass("com/mem/hook/MemNative");
+    jclass clazz = env->FindClass("com/himem/HiMemNative");
     env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(methods[0]));
     return JNI_VERSION_1_6;
 }

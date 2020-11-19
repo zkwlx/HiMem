@@ -12,6 +12,12 @@ cmake_minimum_required(VERSION 3.4.1)
 
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -frtti")
 
+aux_source_directory(fb_unwinder UNWINDER)
+aux_source_directory(fb_unwinder/arm UNWINDER_ARM)
+aux_source_directory(fb_unwinder/arm64 UNWINDER_ARM64)
+aux_source_directory(fb_unwinder/x86 UNWINDER_X86)
+aux_source_directory(fb_unwinder/x86_64 UNWINDER_X86_64)
+
 add_library(
         xhook
 
@@ -36,7 +42,7 @@ add_library(
 )
 
 add_library( # Sets the name of the library.
-        mem-native
+        himem-native
 
         # Sets the library as a shared library.
         SHARED
@@ -44,9 +50,19 @@ add_library( # Sets the name of the library.
         # Provides a relative path to your source file(s).
         mem_native.cpp
         mem_hook.cpp
-        fb_unwinder/runtime.cpp
-        fb_unwinder/unwinder.cpp
         mmap_tracer.cpp
+        mem_stack.cpp
+#        fb_unwinder/runtime.cpp
+#        fb_unwinder/unwinder_wrapper.cpp
+#        fb_unwinder/x86_64/unwinder_android_900.cpp
+#        fb_unwinder/x86/unwinder_android_900.cpp
+#        fb_unwinder/arm64/unwinder_android_900.cpp
+#        fb_unwinder/arm/unwinder_android_900.cpp
+        ${UNWINDER}
+        ${UNWINDER_ARM}
+        ${UNWINDER_ARM64}
+        ${UNWINDER_X86}
+        ${UNWINDER_X86_64}
         )
 
 # Searches for a specified prebuilt library and stores the path as a
@@ -68,7 +84,7 @@ find_library( # Sets the name of the path variable.
 # build script, prebuilt third-party libraries, or system libraries.
 
 target_link_libraries( # Specifies the target library.
-        mem-native
+        himem-native
 
         # Links the target library to the log library
         # included in the NDK.

@@ -2,7 +2,7 @@
 #include <string>
 #include <sys/mman.h>
 #include <cerrno>
-#include "log.h"
+#include "logger.h"
 
 void fake() {
     LOGI(">>>>>>>>>>");

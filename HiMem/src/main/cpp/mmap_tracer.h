@@ -21,7 +21,6 @@ struct mmap_info {
 struct munmap_info {
     uintptr_t address;
     size_t length;
-    char *stack;
 };
 
 void tracerStart(char *dumpDir);

@@ -4,13 +4,12 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
-import com.mem.hook.MemNative
+import com.himem.HiMemNative
 import java.io.File
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
-import kotlin.concurrent.thread
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,7 +52,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun onDumpClick(view: View) {
-        MemNative.deInit()
+        HiMemNative.deInit()
         File(externalCacheDir, "pmaps.txt").writeText(ProcUtils.getPmap())
     }
 

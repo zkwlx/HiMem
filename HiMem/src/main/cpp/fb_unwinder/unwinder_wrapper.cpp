@@ -22,7 +22,20 @@ static std::string os_version = get_system_property("ro.build.version.release");
 
 auto unwind(unwind_callback_t _unwind_callback, void *_unwind_data) -> bool {
     bool result;
-    result = unwind_900(_unwind_callback, _unwind_data);
+    if (os_version == "9.0.0") {
+        result = unwind_900(_unwind_callback, _unwind_data);
+    } else if (os_version == "8.1.0") {
+    } else if (os_version == "8.0.0") {
+    } else if (os_version == "7.1.2") {
+    } else if (os_version == "7.1.1") {
+    } else if (os_version == "7.1.0") {
+    } else if (os_version == "7.0.0") {
+    } else if (os_version == "6.0.1") {
+    } else if (os_version == "6.0.0") {
+
+    } else {
+        result = false;
+    }
     return result;
 }
 

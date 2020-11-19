@@ -4,7 +4,7 @@
 #include "../runtime.h"
 
 #include "../../log.h"
-#include "unwinder_android_900.h"
+#include "../unwinder_android_900.h"
 
 
 struct OatMethod {
@@ -27,7 +27,7 @@ struct ArraySlice {
     uintptr_t element_size_uintptr;
 };
 
-auto get_runtime_from_thread(uintptr_t thread) {
+uint64_t get_runtime_from_thread(uintptr_t thread) {
     uint64_t jni_env = Read8(AccessField(AccessField(thread, 136UL), 56UL));
     if (jni_env == 0U) {
         return 0ULL;
@@ -692,6 +692,7 @@ auto get_frame_size(
 }
 
 auto unwind_900(unwind_callback_t _unwind_callback, void *_unwind_data) -> bool {
+    LOGI("========================= unwind arm64 900");
     uintptr_t thread = get_art_thread();
     if (thread == 0UL) {
         return true;

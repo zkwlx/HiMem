@@ -12,11 +12,19 @@ cmake_minimum_required(VERSION 3.4.1)
 
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -frtti")
 
+if (${CMAKE_ANDROID_ARCH_ABI} STREQUAL "armeabi-v7a")
+    set(DIR "arm")
+elseif (${CMAKE_ANDROID_ARCH_ABI} STREQUAL "arm64-v8a")
+    set(DIR "arm64")
+elseif (${CMAKE_ANDROID_ARCH_ABI} STREQUAL "x86")
+    set(DIR "x86")
+elseif (${CMAKE_ANDROID_ARCH_ABI} STREQUAL "x86_64")
+    set(DIR "x86_64")
+endif ()
+
+aux_source_directory(. ROOT)
 aux_source_directory(fb_unwinder UNWINDER)
-aux_source_directory(fb_unwinder/arm UNWINDER_ARM)
-aux_source_directory(fb_unwinder/arm64 UNWINDER_ARM64)
-aux_source_directory(fb_unwinder/x86 UNWINDER_X86)
-aux_source_directory(fb_unwinder/x86_64 UNWINDER_X86_64)
+aux_source_directory(fb_unwinder/${DIR} UNWINDER_ABI)
 
 add_library(
         xhook
@@ -48,21 +56,9 @@ add_library( # Sets the name of the library.
         SHARED
 
         # Provides a relative path to your source file(s).
-        mem_native.cpp
-        mem_hook.cpp
-        mmap_tracer.cpp
-        mem_stack.cpp
-#        fb_unwinder/runtime.cpp
-#        fb_unwinder/unwinder_wrapper.cpp
-#        fb_unwinder/x86_64/unwinder_android_900.cpp
-#        fb_unwinder/x86/unwinder_android_900.cpp
-#        fb_unwinder/arm64/unwinder_android_900.cpp
-#        fb_unwinder/arm/unwinder_android_900.cpp
+        ${ROOT}
         ${UNWINDER}
-        ${UNWINDER_ARM}
-        ${UNWINDER_ARM64}
-        ${UNWINDER_X86}
-        ${UNWINDER_X86_64}
+        ${UNWINDER_ABI}
         )
 
 # Searches for a specified prebuilt library and stores the path as a

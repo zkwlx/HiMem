@@ -3,25 +3,27 @@
 //
 
 #include <jni.h>
+#include <string>
 #include "runtime.h"
 #include "unwinder_wrapper.h"
+#include "unwinder_android_900.h"
 
-#if defined(__aarch64__)
-#include "arm64/unwinder_android_900.h"
-#elif defined(__arm__)
-#include "arm/unwinder_android_900.h"
-#elif defined(__i386__)
+#include <sys/system_properties.h>
 
-#include "x86/unwinder_android_900.h"
+std::string get_system_property(const char *key) {
+    char prop_value[PROP_VALUE_MAX]{};
+    if (__system_property_get(key, prop_value) > 0) {
+        return std::string(prop_value);
+    }
+    return "";
+}
 
-#elif defined(__x86_64__)
-#include "x86_64/unwinder_android_900.h"
-#else
-#error unsupported architecture
-#endif
+static std::string os_version = get_system_property("ro.build.version.release");
 
 auto unwind(unwind_callback_t _unwind_callback, void *_unwind_data) -> bool {
-    return unwind_900(_unwind_callback, _unwind_data);
+    bool result;
+    result = unwind_900(_unwind_callback, _unwind_data);
+    return result;
 }
 
 auto get_method_name(uintptr_t method) -> string_t {

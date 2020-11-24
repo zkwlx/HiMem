@@ -27,13 +27,14 @@ extern "C" {
 #define DO_DUMP_FOR_MODE_DUMP 1
 
 #define INFO_MMAP "mmap"
-#define INFO_MUNMMAP "munmmap"
+#define INFO_MUNMMAP "munmap"
 #define INFO_DIV "="
 
 using namespace std;
 
 FILE *dumpFile = nullptr;
 atomic_size_t totalSize;
+static const int FLUSH_THRESHOLD = 8 * 1024;
 
 int modeFlag = MODE_LOG;
 
@@ -44,7 +45,6 @@ int modeFlag = MODE_LOG;
 
 void writeLine(char *line, size_t size) {
     static atomic_size_t wroteSize(0);
-    static const int FLUSH_THRESHOLD = 3 * 1024;
     int sizeChar = sizeof(char);
     size_t count = fwrite(line, sizeChar, size / sizeChar, dumpFile);
     wroteSize += count * sizeChar;
@@ -107,7 +107,7 @@ void mmapForModeLog(mmap_info *data) {
     char *content;
     //TODO 可能会有相同 address 多次 mmap 或 munmmap 的情况，考虑通过 map 去重
     // 样例：mmap=0xee6891=104800=prot=flag=java/lang/String.get|com/zhihu/A.mmm|xxx
-    size_t size = asprintf(&content, "%s%s%x%s%d%s%d%s%d%s%s\n", INFO_MMAP, INFO_DIV,
+    size_t size = asprintf(&content, "%s%s%u%s%d%s%d%s%d%s%s\n", INFO_MMAP, INFO_DIV,
                            data->address, INFO_DIV, data->length, INFO_DIV, data->prot, INFO_DIV,
                            data->flag, INFO_DIV, data->stack.c_str());
     if (size > 0) {
@@ -124,7 +124,7 @@ void munmapForModeLog(munmap_info *data) {
     char *content;
     //TODO 可能会有相同 address 多次 mmap 或 munmmap 的情况，考虑通过 map 去重
     // 样例：munmmap=0xee6891=104800
-    size_t size = asprintf(&content, "%s%s%x%s%d\n", INFO_MUNMMAP, INFO_DIV,
+    size_t size = asprintf(&content, "%s%s%u%s%d\n", INFO_MUNMMAP, INFO_DIV,
                            data->address, INFO_DIV, data->length);
     if (size > 0) {
         writeLine(content, size);

@@ -40,14 +40,15 @@ add_library(
         xhook/xhook.c
 )
 
-add_library(
-        clooper
-
-        STATIC
-
-        clooper/looper.cpp
-        clooper/looper_test.cpp
-)
+# 暂时不用 looper 实现
+#add_library(
+#        clooper
+#
+#        STATIC
+#
+#        clooper/looper.cpp
+#        clooper/looper_test.cpp
+#)
 
 add_library( # Sets the name of the library.
         himem-native
@@ -86,6 +87,4 @@ target_link_libraries( # Specifies the target library.
         # included in the NDK.
         ${log-lib}
 
-        xhook
-
-        clooper)
+        xhook)

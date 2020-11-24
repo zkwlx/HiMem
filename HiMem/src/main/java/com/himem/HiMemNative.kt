@@ -6,7 +6,7 @@ object HiMemNative {
 
     external fun setDebug(enable: Int)
 
-    external fun init(dumpDir:String)
+    external fun init(dumpDir: String, mmapSizeThreshold: Long)
 
     external fun deInit()
 

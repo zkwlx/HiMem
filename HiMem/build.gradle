@@ -60,7 +60,7 @@ dependencies {
 apply plugin: 'maven'
 group = "zkw.himem"
 archivesBaseName = "himem"
-version = '0.0.4'
+version = '0.0.10-SNAPSHOT'
 uploadArchives {
     doFirst {
         System.out.println("============uploadArchives for local: $version")

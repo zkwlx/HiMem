@@ -5,7 +5,9 @@
 #include "mmap_tracer.h"
 #include "clooper/looper.h"
 #include <map>
+#include <set>
 #include <cerrno>
+#include <atomic>
 
 extern "C" {
 #include "log.h"
@@ -30,10 +32,8 @@ extern "C" {
 
 using namespace std;
 
-message_looper_t *looper;
-
 FILE *dumpFile = nullptr;
-size_t totalSize;
+atomic_size_t totalSize;
 
 int modeFlag = MODE_LOG;
 
@@ -43,43 +43,21 @@ int modeFlag = MODE_LOG;
 // 三、在内存里统一维护，mmap 时增，munmap 时减，在某个时间点保存到文件，用于观察当前进程内存分配状态
 
 void writeLine(char *line, size_t size) {
-    static int writeCount = 0;
-    static const int FLUSH_THRESHOLD = 10;
-    fwrite(line, sizeof(char), size / sizeof(char), dumpFile);
-    if (++writeCount > FLUSH_THRESHOLD) {
+    static atomic_size_t wroteSize(0);
+    static const int FLUSH_THRESHOLD = 3 * 1024;
+    int sizeChar = sizeof(char);
+    size_t count = fwrite(line, sizeChar, size / sizeChar, dumpFile);
+    wroteSize += count * sizeChar;
+    if (wroteSize > FLUSH_THRESHOLD) {
+        LOGI("----------wrote: %d", wroteSize.load());
         fflush(dumpFile);
-        writeCount = 0;
-    }
-}
-
-/**
- *  MODE_LOG，log 模式：每次 mmap 或 munmap 都保存一条日志（可以是文件），之后出报表分析曲线，用于观察分配趋势
- * @param msg
- */
-void handleForModeLog(message_t *msg) {
-    char *content;
-    size_t size = 0;
-    //TODO 可能会有相同 address 多次 mmap 或 munmmap 的情况，考虑通过 map 去重
-    if (msg->what == ADD_MMAP_INFO) {
-        auto *info = reinterpret_cast<mmap_info *>(msg->data);
-        // 样例：mmap=0xee6891=104800=prot=flag=java/lang/String.get|com/zhihu/A.mmm|xxx
-        size = asprintf(&content, "%s%s%x%s%d%s%d%s%d%s%s\n", INFO_MMAP, INFO_DIV,
-                        info->address, INFO_DIV, info->length, INFO_DIV, info->prot, INFO_DIV,
-                        info->flag, INFO_DIV, info->stack.c_str());
-    } else if (msg->what == DELETE_MMAP_INFO) {
-        auto *info = reinterpret_cast<munmap_info *>(msg->data);
-        // 样例：munmmap=0xee6891=104800
-        size = asprintf(&content, "%s%s%x%s%d\n", INFO_MUNMMAP, INFO_DIV,
-                        info->address, INFO_DIV, info->length);
-    }
-    if (size > 0) {
-        writeLine(content, size);
-        free(content);
+        wroteSize = 0;
     }
 }
 
 /**
  * MODE_DUMP dump 模式：在内存里统一维护，mmap 时增，munmap 时减，在某个时间点保存到文件，用于观察当前进程内存分配状态
+ * @deprecated 旧实现，不使用
  * @param msg
  */
 void handleForModeDump(message_t *msg) {
@@ -113,7 +91,7 @@ void handleForModeDump(message_t *msg) {
             free(content);
         }
         char *end;
-        size_t size = asprintf(&end, "=== total:%d, totalSize:%d", total, totalSize);
+        size_t size = asprintf(&end, "=== total:%d, totalSize:%d", total, totalSize.load());
         writeLine(end, size);
         free(end);
         fflush(dumpFile);
@@ -121,11 +99,36 @@ void handleForModeDump(message_t *msg) {
 }
 
 
-void handle(message_t *msg) {
-    if (modeFlag == MODE_LOG) {
-        handleForModeLog(msg);
-    } else if (modeFlag == MODE_DUMP) {
-        handleForModeDump(msg);
+/**
+ *  MODE_LOG，log 模式：每次 mmap 或 munmap 都保存一条日志（可以是文件），之后出报表分析曲线，用于观察分配趋势
+ * @param msg
+ */
+void mmapForModeLog(mmap_info *data) {
+    char *content;
+    //TODO 可能会有相同 address 多次 mmap 或 munmmap 的情况，考虑通过 map 去重
+    // 样例：mmap=0xee6891=104800=prot=flag=java/lang/String.get|com/zhihu/A.mmm|xxx
+    size_t size = asprintf(&content, "%s%s%x%s%d%s%d%s%d%s%s\n", INFO_MMAP, INFO_DIV,
+                           data->address, INFO_DIV, data->length, INFO_DIV, data->prot, INFO_DIV,
+                           data->flag, INFO_DIV, data->stack.c_str());
+    if (size > 0) {
+        writeLine(content, size);
+        free(content);
+    }
+}
+
+/**
+ *  MODE_LOG，log 模式：每次 mmap 或 munmap 都保存一条日志（可以是文件），之后出报表分析曲线，用于观察分配趋势
+ * @param msg
+ */
+void munmapForModeLog(munmap_info *data) {
+    char *content;
+    //TODO 可能会有相同 address 多次 mmap 或 munmmap 的情况，考虑通过 map 去重
+    // 样例：munmmap=0xee6891=104800
+    size_t size = asprintf(&content, "%s%s%x%s%d\n", INFO_MUNMMAP, INFO_DIV,
+                           data->address, INFO_DIV, data->length);
+    if (size > 0) {
+        writeLine(content, size);
+        free(content);
     }
 }
 
@@ -134,7 +137,7 @@ void createFile(char *dumpDir) {
         struct timeval stamp{};
         gettimeofday(&stamp, nullptr);
         char *filePath;
-        asprintf(&filePath, "%s/himem_%d_%ld.log", dumpDir, modeFlag, stamp.tv_sec);
+        asprintf(&filePath, "%s/trace_%d_%ld.himem", dumpDir, modeFlag, stamp.tv_sec);
         dumpFile = fopen(filePath, "ae");
         if (dumpFile == nullptr) {
             LOGE("文件打开错误：%s，错误原因：%s", filePath, strerror(errno));
@@ -143,40 +146,21 @@ void createFile(char *dumpDir) {
 }
 
 void tracerStart(char *dumpDir) {
-    looper = looperCreate(handle);
-    if (looper == nullptr) {
-        LOGI("looperCreate fail!!!!!!!!!");
-        return;
-    }
-    switch (looperStart(looper)) {
-        case LOOPER_START_SUCCESS:
-            createFile(dumpDir);
-            break;
-        case LOOPER_START_THREAD_ERROR:
-            LOGI("looperStart thread create fail.");
-            looperDestroy(&looper);
-            break;
-        case LOOPER_START_REPEAT_ERROR:
-            LOGI("looperStart looper is started");
-            break;
-        case LOOPER_IS_NULL:
-            LOGI("looperStart looper is NULL");
-            break;
-        default:
-            break;
-    }
+    createFile(dumpDir);
 }
 
 void postOnMmap(mmap_info *data) {
-    looperPost(looper, ADD_MMAP_INFO, data, sizeof(mmap_info));
+    mmapForModeLog(data);
 }
 
 void postOnMunmap(munmap_info *data) {
-    looperPost(looper, DELETE_MMAP_INFO, data, sizeof(munmap_info));
+    munmapForModeLog(data);
 }
 
 void dumpToFile() {
-    looperPost(looper, DO_DUMP_FOR_MODE_DUMP, nullptr, 0);
+    if (dumpFile != nullptr) {
+        fflush(dumpFile);
+    }
 }
 
 void tracerDestroy() {
@@ -187,5 +171,4 @@ void tracerDestroy() {
         }
         dumpFile = nullptr;
     }
-    looperDestroy(&looper);
 }

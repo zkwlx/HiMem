@@ -15,6 +15,6 @@ class MyApplication : Application() {
         val root = File(file!!.absolutePath, "HiMem/")
         Toast.makeText(this, "HiMem 日志存放在 " + root.absolutePath + " 目录下", Toast.LENGTH_LONG).show()
         root.mkdirs()
-        HiMemNative.init(root.absolutePath)
+        HiMemNative.init(root.absolutePath, 0)
     }
 }

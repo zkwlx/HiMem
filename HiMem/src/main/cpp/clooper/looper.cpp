@@ -6,9 +6,8 @@
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
-#include "../log.h"
+#include "looper_log.h"
 
-#define LOG_TAG "adi_looper"
 
 static message_t *fetch_message(message_queue_t *queue) {
     if (queue->size < 1) {
@@ -22,7 +21,7 @@ static message_t *fetch_message(message_queue_t *queue) {
 
 static int delete_message(message_t *message) {
     if (message == nullptr) {
-        LOGI("%s", "delete_message message is null.\n");
+        LOOPLOGI("%s", "delete_message message is null.\n");
         return -1;
     }
     if (message->data != nullptr) {
@@ -46,6 +45,7 @@ static int clear_message_queue(message_queue_t *queue) {
     }
     return 0;
 }
+
 
 /**
  * 主 looper 循环函数
@@ -73,7 +73,7 @@ static void *message_loop(void *arg) {
         delete_message(msg);    //删除消息
 
     }
-    LOGI("looper exit~");
+    LOOPLOGI("looper exit~");
     clear_message_queue(&(looper->queue));  //最后清空链表
     return nullptr;
 }
@@ -87,12 +87,12 @@ static void *message_loop(void *arg) {
  */
 message_looper_t *looperCreate(CALLBACK_FUNC func) {
     if (func == nullptr) {
-        LOGI("func is null.\n");
+        LOOPLOGI("func is null.\n");
         return nullptr;
     }
     auto *looper = static_cast<message_looper_t *>(malloc(sizeof(message_looper_t)));
     if (looper == nullptr) {
-        LOGI("looperCreate malloc fail.\n");
+        LOOPLOGI("looperCreate malloc fail.\n");
         return nullptr;
     }
     looper->is_looping = 0;
@@ -111,17 +111,17 @@ message_looper_t *looperCreate(CALLBACK_FUNC func) {
  */
 int looperStart(message_looper_t *looper) {
     if (looper == nullptr) {
-        LOGI("looperStart looper is null.");
+        LOOPLOGI("looperStart looper is null.");
         return LOOPER_IS_NULL;
     }
 
     if (looper->is_looping) {
-        LOGI("[message_loop] looperStart message_loop had start.");
+        LOOPLOGI("[message_loop] looperStart message_loop had start.");
         return LOOPER_START_REPEAT_ERROR;
     }
     looper->is_looping = 1;   //标志创建了 looper线程
     if (pthread_create(&(looper->looper_thread), nullptr, message_loop, looper)) {
-        LOGI("pthread_create message_loop fail.");
+        LOOPLOGI("pthread_create message_loop fail.");
         looper->is_looping = 0;  //线程创建失败，loop标志为false
         return LOOPER_START_THREAD_ERROR;
     }
@@ -135,7 +135,7 @@ int looperStart(message_looper_t *looper) {
  */
 int looperStop(message_looper_t *looper) {
     if (looper == nullptr) {
-        LOGI("looperStop loop is null.");
+        LOOPLOGI("looperStop loop is null.");
         return LOOPER_IS_NULL;
     }
     looper->is_looping = 0; //标志线程结束
@@ -152,11 +152,11 @@ int looperStop(message_looper_t *looper) {
  */
 int looperDestroy(message_looper_t **looper) {
     if (*looper == nullptr) {
-        LOGI("destroy_loop looper is null.");
+        LOOPLOGI("destroy_loop looper is null.");
         return LOOPER_IS_NULL;
     }
     if ((*looper)->is_looping) {
-        LOGI("destroy_loop stop");
+        LOOPLOGI("destroy_loop stop");
         looperStop(*looper); //结束线程
     }
 
@@ -178,14 +178,14 @@ int looperDestroy(message_looper_t **looper) {
  */
 int looperPost(message_looper_t *looper, int what, const void *data, size_t size) {
     if (looper == nullptr) {
-        LOGI("looperPost looper is null.");
+        LOOPLOGI("looperPost looper is null.");
         return LOOPER_IS_NULL;
     }
     pthread_mutex_lock(&(looper->queue_mutex));
     if ((looper->queue).size > MAX_MESSAGE_SIZE) {
         //当前队列中的消息太多了，还没来得及处理
-        LOGI("queue.size(%d) more than %d.", (looper->queue).size,
-             MAX_MESSAGE_SIZE);
+        LOOPLOGI("queue.size(%d) more than %d.", (looper->queue).size,
+                 MAX_MESSAGE_SIZE);
 //        pthread_mutex_unlock(&(looper->queue_mutex));
 //        return -1;
     }
@@ -209,18 +209,19 @@ int looperPost(message_looper_t *looper, int what, const void *data, size_t size
         //头部为空时，直接指向新的消息
         (looper->queue).head = message;
         ((looper->queue).size)++;
-        pthread_cond_signal(&(looper->queue_cond));
-        pthread_mutex_unlock(&(looper->queue_mutex));
-        return 0;
+    } else {
+        message_t *tmp = (looper->queue).head;
+        while (tmp->next != nullptr) {
+            // TODO 添加链表尾，方便快速插入，避免每次都遍历到结尾
+            //新的消息发到链表尾部
+            tmp = tmp->next;
+        }
+        tmp->next = message;
+        ((looper->queue).size)++;
+        LOOPLOGI("post msg finished!!");
     }
-    message_t *tmp = (looper->queue).head;
-    while (tmp->next != nullptr) {
-        //新的消息发到链表尾部
-        tmp = tmp->next;
-    }
-    tmp->next = message;
-    ((looper->queue).size)++;
     pthread_cond_signal(&(looper->queue_cond));
     pthread_mutex_unlock(&(looper->queue_mutex));
     return 0;
+
 }

@@ -2,6 +2,8 @@
 #include <string>
 #include <sys/mman.h>
 #include <cerrno>
+#include <csignal>
+#include <csetjmp>
 #include "log.h"
 
 #include <unistd.h>
@@ -18,11 +20,13 @@ extern "C" {
 #include "log.h"
 }
 
-#define SIZE_THRESHOLD 1024
 //#define SIZE_THRESHOLD 1040384
 
 JavaVM *g_vm = nullptr;
 jobject g_obj = nullptr;
+
+// 默认 1MB
+static uint64_t SIZE_THRESHOLD = 1040384;
 
 void setEnv(JNIEnv *env, jobject obj) {
     // 保存全局 vm 引用，以便在子线程中使用
@@ -39,12 +43,37 @@ void setDebug(JNIEnv *env, jobject thiz, jint enable) {
     set_hook_debug(enable);
 }
 
-void init(JNIEnv *env, jobject thiz, jstring dumpDir) {
+static struct sigaction oldAction{};
+
+void sigHandler(int sig) {
+    if (canJump) {
+        siglongjmp(jumpEnv, 1);
+    } else {
+        LOGE("can't jump, because not invoke sigsetjmp!");
+        oldAction.sa_handler(sig);
+    }
+}
+
+static void initSigaction() {
+    struct sigaction action{};
+    action.sa_handler = sigHandler;
+    sigemptyset(&action.sa_mask);
+    action.sa_flags = 0;
+    if (sigaction(SIGSEGV, &action, &oldAction) == -1) {
+        LOGE("sigaction SIGSEGV failed!");
+    }
+}
+
+void init(JNIEnv *env, jobject thiz, jstring dumpDir, jlong mmapSizeThreshold) {
+    SIZE_THRESHOLD = mmapSizeThreshold;
     // set global env
     setEnv(env, thiz);
     char *dumpDirChar = const_cast<char *>(env->GetStringUTFChars(dumpDir, JNI_FALSE));
     tracerStart(dumpDirChar);
     env->ReleaseStringUTFChars(dumpDir, dumpDirChar);
+
+    initSigaction();
+
     do_hook();
 }
 
@@ -84,14 +113,10 @@ void onMmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset
 }
 
 void callOnMmap64(void *addr, size_t length, int prot, int flags, int fd, off_t offset) {
-    LOGI("mmap64 ====> addr:%p, addr_long:%ld, length:%d, prot:%d, flags:%d, fd:%d, offset:%lld",
-         addr, addr, length, prot, flags, fd, offset);
     onMmap(addr, length, prot, flags, fd, offset);
 }
 
 void callOnMmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset) {
-    LOGI("mmap ====> addr:%p, addr_long:%ld, length:%d, prot:%d, flags:%d, fd:%d, offset:%lld",
-         addr, addr, length, prot, flags, fd, offset);
     onMmap(addr, length, prot, flags, fd, offset);
 }
 
@@ -131,10 +156,10 @@ void callJava(void *addr, size_t length, int prot, int flags, int fd, off_t offs
 }
 
 static JNINativeMethod methods[] = {
-        {"setDebug", "(I)V",                  (void *) setDebug},
-        {"init",     "(Ljava/lang/String;)V", (void *) init},
-        {"deInit",   "()V",                   (void *) deInit},
-        {"memDump",  "()V",                   (void *) memDump},
+        {"setDebug", "(I)V",                   (void *) setDebug},
+        {"init",     "(Ljava/lang/String;J)V", (void *) init},
+        {"deInit",   "()V",                    (void *) deInit},
+        {"memDump",  "()V",                    (void *) memDump},
 };
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {

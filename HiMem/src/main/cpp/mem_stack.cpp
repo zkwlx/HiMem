@@ -3,6 +3,7 @@
 //
 
 #include <string>
+#include <csignal>
 #include "fb_unwinder/runtime.h"
 #include "fb_unwinder/unwinder_wrapper.h"
 #include "mem_stack.h"
@@ -12,6 +13,15 @@ extern "C" {
 }
 
 #define MAX_STACK_DEPTH 512
+
+/**
+ * SIGSEGV 信号的跳转恢复点。需要考虑多线程情况
+ */
+__thread jmp_buf jumpEnv;
+/**
+ * 设置好 SIGSEGV 跳转点时置位 true。需要考虑多线程情况
+ */
+__thread bool canJump = false;
 
 bool unwind_cb(uintptr_t frame, void *data) {
     auto *ud = reinterpret_cast<unwinder_data *>(data);
@@ -46,16 +56,25 @@ bool obtainStack(std::string &stack) {
             .depth = 0,
             .max_depth = MAX_STACK_DEPTH,
     };
-    if (unwind(&unwind_cb, &data)) {
-        for (int i = 0; i < data.depth; i++) {
-            std::string desc = data.class_descriptors[i];
-            stack.append(desc.substr(1, desc.size() - 2))
-                    .append(".").append(data.method_names[i]).append(STACK_ELEMENT_DIV);
+
+    if (sigsetjmp(jumpEnv, 1) == 0) {
+        canJump = true;
+        if (unwind(&unwind_cb, &data)) {
+            for (int i = 0; i < data.depth; i++) {
+                std::string desc = data.class_descriptors[i];
+                stack.append(desc.substr(1, desc.size() - 2))
+                        .append(".").append(data.method_names[i]).append(STACK_ELEMENT_DIV);
+            }
+            LOGI("unwind success!!!:%d", stack.length());
+            return true;
+        } else {
+            LOGI("unwind failed!!!!");
+            return false;
         }
-        LOGI("unwind success!!!:%d", stack.length());
-        return true;
-    } else {
-        LOGI("unwind failed!!!!");
+    } else {// jump
+        LOGI("SIGSEGV!! skip ================!!");
         return false;
     }
+
+
 }

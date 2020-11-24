@@ -2,10 +2,12 @@
 // Created by creat on 2020/3/24 0024.
 //
 
-#include "mem_hook.h"
+#include <string>
 #include <unistd.h>
 #include <sys/mman.h>
+#include "mem_hook.h"
 #include "mem_native.h"
+#include "mem_stack.h"
 
 extern "C" {
 #include "log.h"
@@ -42,7 +44,7 @@ void do_hook() {
 //    xhook_register("^/vendor/.*$", "mmap", my_mmap, NULL);
 //    xhook_register("^/sys/kernel", "mmap", my_mmap, NULL);
 //    xhook_register("^/vendor/.*$", "munmap", my_munmap, NULL);
-//    xhook_register(".*", "mmap", (void *) my_mmap, NULL);
+    xhook_register(".*", "mmap", (void *) my_mmap, NULL);
     xhook_register(".*", "mmap64", (void *) my_mmap64, NULL);
     xhook_register(".*", "munmap", (void *) my_munmap, NULL);
 //    xhook_register(".*/libart.so$", "mmap", my_mmap, NULL);

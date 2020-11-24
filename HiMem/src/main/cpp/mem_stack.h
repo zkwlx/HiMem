@@ -5,7 +5,12 @@
 #ifndef MEMORY_MEM_STACK_H
 #define MEMORY_MEM_STACK_H
 
+#include <csetjmp>
+
 #define STACK_ELEMENT_DIV "|"
+
+extern __thread jmp_buf jumpEnv;
+extern __thread bool canJump;
 
 struct unwinder_data {
     ucontext_t *ucontext;

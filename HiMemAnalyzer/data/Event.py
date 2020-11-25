@@ -26,4 +26,4 @@ class Event:
                and self.stack == other.stack
 
     def __str__(self):
-        return "%x, %d, %d, %d" % (self.address, self.length, self.protect, self.flag)
+        return "%x, %d, %d, %d, %s" % (self.address, self.length, self.protect, self.flag, self.stack)

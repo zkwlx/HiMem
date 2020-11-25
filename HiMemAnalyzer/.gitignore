@@ -1,0 +1,7 @@
+*.DS_Store
+*.py[cod]
+
+.idea/*
+*.log
+dist
+adi_analyzer.egg-info/*

@@ -8,6 +8,7 @@ from typing import Optional
 from data.Event import Event
 from handler.BaseHandler import BaseHandler
 from handler.BaseHandler import SEP_OR
+from utils import Log
 
 
 class MMAPHandler(BaseHandler):
@@ -29,7 +30,7 @@ class MMAPHandler(BaseHandler):
             event.stack = str(segmentList[5]).replace(SEP_OR, "\n")
 
         if event in self.uniqueEvents:
-            print("mmap, 重复 event:" + str(event))
+            Log.i("mmap, 重复 event:" + str(event))
             return None
         else:
             self.uniqueEvents.append(event)

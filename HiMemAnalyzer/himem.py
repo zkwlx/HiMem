@@ -15,6 +15,8 @@ from handler.MUNMAPHandler import MUNMAPHandler
 from plot.BokehPlotMaker import BokehPlotMaker
 from plot.PlotInfo import PlotInfo
 
+DEBUG_LOG = False
+
 LOG_PATH = ""
 LOG_NAME = ""
 
@@ -30,6 +32,7 @@ def handleTraceFile() -> list:
     with open(LOG_PATH, "r", encoding="ISO-8859-1") as file:
         count = 0
         for line in file:
+            line = line.strip()
             count += 1
             event = handleLineFromFile(line)
             if event is not None:

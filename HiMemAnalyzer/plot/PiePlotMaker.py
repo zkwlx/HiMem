@@ -16,6 +16,9 @@ import pandas
 
 
 class PiePlotMaker(BaseMaker):
+    """
+    调试 Pie 图用，请勿直接使用！
+    """
 
     def make(self, info: PlotInfo, eventList: list) -> Figure:
         x = {

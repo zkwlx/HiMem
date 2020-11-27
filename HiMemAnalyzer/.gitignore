@@ -2,3 +2,5 @@
 *.py[cod]
 
 .idea/*
+*.himem
+*.himem.html

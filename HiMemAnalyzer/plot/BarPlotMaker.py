@@ -20,16 +20,6 @@ PREFIX_CURSOR = "android/database/CursorWindow.nativeCreate"
 PREFIX_THREAD = "java/lang/Thread.nativeCreate"
 
 
-# TODO thread 472, cursor 215
-# TODO thread 1765801984, cursor 506634240
-# threads=0
-# cursors=0
-# for event in newEventList:
-#     if str(event.stack).startswith(PREFIX_CURSOR):
-#         threads += event.length
-#     elif str(event.stack).startswith(PREFIX_THREAD):
-#         cursors += event.length
-
 class AggEvent:
     def __init__(self, expand: bool):
         # (length, protect, flag)

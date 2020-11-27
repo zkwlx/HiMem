@@ -7,6 +7,7 @@ from typing import Optional
 
 from data.Event import Event
 from handler.BaseHandler import BaseHandler
+from utils import Log
 
 
 class MUNMAPHandler(BaseHandler):
@@ -24,7 +25,7 @@ class MUNMAPHandler(BaseHandler):
         event.length = int(segmentList[2])
 
         if event in self.uniqueEvents:
-            print("munmap, 重复 event:" + str(event))
+            Log.i("munmap, 重复 event:" + str(event))
             return None
         else:
             self.uniqueEvents.append(event)

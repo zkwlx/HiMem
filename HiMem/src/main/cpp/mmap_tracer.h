@@ -14,6 +14,7 @@ struct mmap_info {
     int prot;
     int flag;
     int fd;
+    std::string fdLink;
     off_t offset;
     std::string stack;
 };

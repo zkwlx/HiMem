@@ -5,7 +5,7 @@
 # @File    : BaseHandler.py
 from data.Event import Event
 
-SEP_EQ = "="
+SEP_EQ = "[]"
 SEP_OR = "|"
 
 

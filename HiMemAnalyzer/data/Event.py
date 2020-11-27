@@ -15,7 +15,11 @@ class Event:
         self.length = 0
         self.protect = 0
         self.flag = 0
+        self.fd = 0
+        self.fdLink = ""
         self.stack = ""
+        self.protectStr = ""
+        self.flagStr = ""
 
     def __eq__(self, other):
         return self.address == other.address \

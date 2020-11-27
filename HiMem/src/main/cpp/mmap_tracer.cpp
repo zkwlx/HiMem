@@ -107,9 +107,9 @@ void mmapForModeLog(mmap_info *data) {
     char *content;
     //TODO 可能会有相同 address 多次 mmap 或 munmmap 的情况，考虑通过 map 去重
     // 样例：mmap=0xee6891=104800=prot=flag=java/lang/String.get|com/zhihu/A.mmm|xxx
-    size_t size = asprintf(&content, "%s%s%u%s%d%s%d%s%d%s%s\n", INFO_MMAP, INFO_DIV,
-                           data->address, INFO_DIV, data->length, INFO_DIV, data->prot, INFO_DIV,
-                           data->flag, INFO_DIV, data->stack.c_str());
+    size_t size = asprintf(&content, "%s[]%u[]%d[]%d[]%d[]%d[]%s[]%s\n", INFO_MMAP,
+                           data->address, data->length, data->prot, data->flag, data->fd,
+                           data->fdLink.c_str(), data->stack.c_str());
     if (size > 0) {
         writeLine(content, size);
         free(content);
@@ -124,8 +124,8 @@ void munmapForModeLog(munmap_info *data) {
     char *content;
     //TODO 可能会有相同 address 多次 mmap 或 munmmap 的情况，考虑通过 map 去重
     // 样例：munmmap=0xee6891=104800
-    size_t size = asprintf(&content, "%s%s%u%s%d\n", INFO_MUNMMAP, INFO_DIV,
-                           data->address, INFO_DIV, data->length);
+    size_t size = asprintf(&content, "%s[]%u[]%d\n", INFO_MUNMMAP,
+                           data->address, data->length);
     if (size > 0) {
         writeLine(content, size);
         free(content);

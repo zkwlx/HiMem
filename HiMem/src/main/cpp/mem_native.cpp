@@ -20,6 +20,7 @@ extern "C" {
 #include "log.h"
 }
 
+using namespace std;
 //#define SIZE_THRESHOLD 1040384
 
 JavaVM *g_vm = nullptr;
@@ -87,6 +88,21 @@ void memDump(JNIEnv *env, jobject thiz) {
     dumpToFile();
 }
 
+string fdToLink(int fd) {
+    if (fd > 0) {
+        string fdPath = "/proc/self/fd/";
+        fdPath.append(to_string(fd));
+        char file_path[1024] = {'\0'};
+        if (readlink(fdPath.c_str(), file_path, sizeof(file_path) - 1) == -1) {
+            return string("error: ").append(strerror(errno));
+        } else {
+            return string(file_path);
+        }
+    } else {
+        return "";
+    }
+}
+
 void onMmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset) {
     if (length < SIZE_THRESHOLD) {
         // 小内存分配，忽略
@@ -97,8 +113,10 @@ void onMmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset
         // 非 JVM 触发的分配，警告
         LOGE("MMAP GetEnv Fail!!!>> addr: %p, length: %u", addr, length);
     }
-    std::string stack;
+    string stack;
     obtainStack(stack);
+    // fd 解析为 path
+    string fdLink = fdToLink(fd);
 
     mmap_info info{
             .address = reinterpret_cast<uintptr_t>(addr),
@@ -106,6 +124,7 @@ void onMmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset
             .prot = prot,
             .flag = flags,
             .fd = fd,
+            .fdLink = fdLink,
             .offset = offset,
             .stack = stack,
     };

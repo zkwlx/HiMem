@@ -16,8 +16,9 @@ class BokehPlotMaker:
 
     def __init__(self, ):
         super().__init__()
-        self.makerList = [BarPlotMaker(True), BarPlotMaker(False)]
-        # self.makerList = [LinePlotMaker(), BarPlotMaker(True)]
+        self.makerList = [LinePlotMaker()]
+        # self.makerList = [BarPlotMaker(False)]
+        # self.makerList = [LinePlotMaker(), BarPlotMaker(True), BarPlotMaker(False)]
 
     def make(self, info: PlotInfo, eventList: list):
         output_file(info.filePath + ".html")

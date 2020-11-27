@@ -20,7 +20,9 @@ class FlatEvent:
         self.flagList = []
         self.stackList = []
         self.numberList = []
+        self.fdList = []
         self.totalLengthList = []
+        self.totalLengthStrList = []
 
 
 class LinePlotMaker(BaseMaker):
@@ -41,9 +43,14 @@ class LinePlotMaker(BaseMaker):
                 totalLength += event.length
             elif event.type == "munmap":
                 totalLength -= event.length
-            flat.totalLengthList.append(convertSize(totalLength))
-            flat.protectList.append(event.protect)
-            flat.flagList.append(event.flag)
+            flat.totalLengthList.append(totalLength)
+            flat.totalLengthStrList.append(convertSize(totalLength))
+            flat.protectList.append(event.protectStr)
+            flat.flagList.append(event.flagStr)
+            if event.fd == -1:
+                flat.fdList.append("-1")
+            else:
+                flat.fdList.append(event.fdLink)
             flat.stackList.append(event.stack)
         return flat
 
@@ -52,18 +59,16 @@ class LinePlotMaker(BaseMaker):
                    <div>
                        <div>
                            <span style="font-size: 5px; font-weight: bold;">@typeList</span>
-                       </div>
-                       <div>
                            <span style="font-size: 5px; font-weight: bold;">address:</span>
                            <span style="font-size: 6px;">@addressList</span>
                        </div>
                        <div>
-                           <span style="font-size: 5px; font-weight: bold;">length:</span>
-                           <span style="font-size: 6px;">@lengthList Byte</span>
+                           <span style="font-size: 5px; font-weight: bold;">total length:</span>
+                           <span style="font-size: 6px;">@totalLengthStrList</span>
                        </div>
                        <div>
-                           <span style="font-size: 5px; font-weight: bold;">total length:</span>
-                           <span style="font-size: 6px;">@y Byte</span>
+                           <span style="font-size: 5px; font-weight: bold;">length:</span>
+                           <span style="font-size: 6px;">@lengthList</span>
                        </div>
                        <div>
                            <span style="font-size: 5px; font-weight: bold;">prot:</span>
@@ -72,6 +77,10 @@ class LinePlotMaker(BaseMaker):
                        <div>
                            <span style="font-size: 5px; font-weight: bold;">flag:</span>
                            <span style="font-size: 6px;">@flagList</span>
+                       </div>
+                       <div>
+                           <span style="font-size: 5px; font-weight: bold;">fd:</span>
+                           <span style="font-size: 6px;">@fdList</span>
                        </div>
                        <div>
                            <span style="font-size: 5px; font-weight: bold;">stack:</span>
@@ -86,8 +95,8 @@ class LinePlotMaker(BaseMaker):
 
         data = dict(x=flat.numberList, y=flat.totalLengthList, typeList=flat.typeList, addressList=flat.addressList,
                     protectList=flat.protectList, flagList=flat.flagList, stackList=flat.stackList,
-                    lengthList=flat.lengthList)
-        # graph.line(source=data, x="x", y="y", line_width=2)
-        graph.circle(source=data, x="x", y="y", fill_color="white", size=5)
+                    lengthList=flat.lengthList, fdList=flat.fdList, totalLengthStrList=flat.totalLengthStrList)
+        graph.line(source=data, x="x", y="y", line_width=2)
+        # graph.circle(source=data, x="x", y="y", fill_color="white", size=5)
 
         return graph

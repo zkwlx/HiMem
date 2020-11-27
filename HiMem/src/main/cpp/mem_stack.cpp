@@ -73,6 +73,7 @@ bool obtainStack(std::string &stack) {
         }
     } else {// jump
         LOGI("SIGSEGV!! skip ================!!");
+        stack.append("stack unwind error").append(STACK_ELEMENT_DIV);
         return false;
     }
 

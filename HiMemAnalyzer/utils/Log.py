@@ -3,7 +3,8 @@
 # @Time    : 2020/11/25 下午7:04
 # @Author  : zkw
 # @File    : Log.py
-from himem import DEBUG_LOG
+
+DEBUG_LOG = False
 
 
 def i(content: str):

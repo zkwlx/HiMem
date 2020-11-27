@@ -15,8 +15,6 @@ from handler.MUNMAPHandler import MUNMAPHandler
 from plot.BokehPlotMaker import BokehPlotMaker
 from plot.PlotInfo import PlotInfo
 
-DEBUG_LOG = False
-
 LOG_PATH = ""
 LOG_NAME = ""
 

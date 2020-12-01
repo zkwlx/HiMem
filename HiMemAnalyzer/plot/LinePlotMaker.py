@@ -26,6 +26,9 @@ class FlatEvent:
 
 
 class LinePlotMaker(BaseMaker):
+    """
+    线图，反映 App 在一段时间内的 mmap/munmap 整体趋势
+    """
 
     def make(self, info: PlotInfo, eventList: list) -> Figure:
         flat = self.flatEventList(eventList)

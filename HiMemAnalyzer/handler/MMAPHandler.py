@@ -8,7 +8,6 @@ from typing import Optional
 from data.Event import Event
 from handler.BaseHandler import BaseHandler
 from handler.BaseHandler import SEP_OR
-from utils import Log
 
 
 class CMask:
@@ -36,7 +35,6 @@ class MMAPHandler(BaseHandler):
 
     def __init__(self):
         super().__init__()
-        self.uniqueEvents = []
 
     def handle(self, segmentList: list) -> Optional[Event]:
         """
@@ -59,13 +57,14 @@ class MMAPHandler(BaseHandler):
         event.fdLink = str(segmentList[6])
         if len(segmentList) == 8:
             event.stack = str(segmentList[7]).replace(SEP_OR, "\n")
-
-        if event in self.uniqueEvents:
-            Log.i("mmap, 重复 event:" + str(event))
-            return None
-        else:
-            self.uniqueEvents.append(event)
-            return event
+        return event
+        # 去重逻辑暂时关闭，端上sdk 已经可以较好的去重了，剩下的重复基本上都是 Thread.nativeCreate 的堆栈
+        # if event.address in uniqueAddress:
+        #     Log.i("mmap, 重复 address event:" + str(event))
+        #     return None
+        # else:
+        #     uniqueAddress.add(event.address)
+        #     return event
 
     def convertMaskToStr(self, currentMask: int, maskList: list) -> str:
         result = ""

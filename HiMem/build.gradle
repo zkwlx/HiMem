@@ -58,7 +58,7 @@ dependencies {
 
 //TODO maven local ======
 apply plugin: 'maven'
-group = "zkw.himem"
+group = "zhihu.himem"
 archivesBaseName = "himem"
 version = '0.0.10-SNAPSHOT'
 uploadArchives {

@@ -92,6 +92,9 @@ def cmpAgg(event1: AggEvent, event2: AggEvent) -> int:
 
 
 class BarPlotMaker(BaseMaker):
+    """
+
+    """
 
     def __init__(self, expand: bool = True):
         """
@@ -145,8 +148,11 @@ class BarPlotMaker(BaseMaker):
                           </div>
                           """
         title = "内存 mmap 监控占比图，总次数：%d 次，聚类后：%d 类，日志文件：%s" % (info.count, len(flat.numberList), info.fileName)
-        p = figure(plot_width=1000, plot_height=1800, title=title, x_axis_label="虚拟内存大小（字节）", y_axis_label="排名",
-                   tooltips=hoverToolHtml)
+        plot_height = 1000
+        if self.isExpand:
+            plot_height *= 2
+        p = figure(plot_width=1000, plot_height=int(plot_height), title=title, x_axis_label="虚拟内存大小（字节）",
+                   y_axis_label="排名", tooltips=hoverToolHtml)
         data = dict(x=flat.totalLengthList, y=flat.numberList, totalLengthStrList=flat.totalLengthStr,
                     proportionList=flat.proportionList, maskList=flat.maskList, countList=flat.countList,
                     stackList=flat.stackList, protStrList=flat.protStrList, flagStrList=flat.flagStrList,
@@ -210,7 +216,7 @@ class BarPlotMaker(BaseMaker):
 
     def adjustForMunmap(self, eventList: list) -> list:
         """
-        调整原始 eventList，减去 munmap 对应的 mmap
+        调整原始 eventList，减去 munmap 对应的 mmap，剩下的都是未 munmap 的所有 mmap 事件
         :param eventList:
         :return:
         """
@@ -238,4 +244,4 @@ class BarPlotMaker(BaseMaker):
         if deletedEvent is not None:
             newEventList.remove(deletedEvent)
         else:
-            print("未找到相同地址的 mmap 事件，address:%x" % munmapEvent.address)
+            print("[removeForMunmaped] 未找到相同地址的 mmap 事件，address:%x" % munmapEvent.address)

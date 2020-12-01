@@ -4,7 +4,7 @@
 # @Author  : zkw
 # @File    : Log.py
 
-DEBUG_LOG = False
+DEBUG_LOG = True
 
 
 def i(content: str):

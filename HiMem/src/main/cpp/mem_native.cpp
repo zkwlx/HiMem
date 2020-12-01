@@ -6,9 +6,7 @@
 #include <csetjmp>
 #include "log.h"
 
-#include <unistd.h>
-#include <malloc.h>
-#include <map>
+#include <set>
 
 #include "mem_hook.h"
 #include "mem_native.h"
@@ -21,13 +19,15 @@ extern "C" {
 }
 
 using namespace std;
-//#define SIZE_THRESHOLD 1040384
 
 JavaVM *g_vm = nullptr;
 jobject g_obj = nullptr;
 
 // 默认 1MB
 static uint64_t SIZE_THRESHOLD = 1040384;
+
+// 用于 mmap/munmap 去重
+thread_local set<uintptr_t> addressSet;
 
 void setEnv(JNIEnv *env, jobject obj) {
     // 保存全局 vm 引用，以便在子线程中使用
@@ -108,18 +108,20 @@ void onMmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset
         // 小内存分配，忽略
         return;
     }
-    JNIEnv *env;
-    if (g_vm->GetEnv((void **) &env, JNI_VERSION_1_6) != JNI_OK || env == nullptr) {
-        // 非 JVM 触发的分配，警告
-        LOGE("MMAP GetEnv Fail!!!>> addr: %p, length: %u", addr, length);
+    auto address = reinterpret_cast<uintptr_t>(addr);
+    auto result = addressSet.insert(address);
+    if (!result.second) {
+        // 对同一个地址多次 mmap(可能因为 hook 过多导致)，跳过
+        return;
     }
+    // 尝试获取 JVM 堆栈
     string stack;
     obtainStack(stack);
-    // fd 解析为 path
+    // fd 解析为映射的文件 path
     string fdLink = fdToLink(fd);
 
     mmap_info info{
-            .address = reinterpret_cast<uintptr_t>(addr),
+            .address = address,
             .length = length,
             .prot = prot,
             .flag = flags,
@@ -140,17 +142,17 @@ void callOnMmap(void *addr, size_t length, int prot, int flags, int fd, off_t of
 }
 
 void callOnMunmap(void *addr, size_t length) {
-    LOGI("munmmap ----> addr:%p, length:%d", addr, length);
     if (length < SIZE_THRESHOLD) {
         return;
     }
-    JNIEnv *env;
-    if (g_vm->GetEnv((void **) &env, JNI_VERSION_1_6) != JNI_OK || env == nullptr) {
-        LOGE("MUNMAP GetEnv Fail!!!>> addr: %p, length: %ld", addr, length);
+    auto address = reinterpret_cast<uintptr_t>(addr);
+    int success = addressSet.erase(address);
+    if (!success) {
+        // 对同一个地址多次 munmap(可能因为 hook 过多导致)，跳过
+        return;
     }
-
     munmap_info info{
-            .address = reinterpret_cast<uintptr_t>(addr),
+            .address = address,
             .length = length,
     };
     postOnMunmap(&info);

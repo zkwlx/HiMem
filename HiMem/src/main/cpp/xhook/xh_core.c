@@ -31,6 +31,7 @@
 #include <regex.h>
 #include <setjmp.h>
 #include <errno.h>
+#include <inttypes.h>
 #include "queue.h"
 #include "tree.h"
 #include "xh_errno.h"
@@ -230,6 +231,10 @@ static int xh_core_check_elf_header(uintptr_t base_addr, const char *pathname) {
     }
 }
 
+/**
+ * 开始对一个 .so 进行遍历，根据配置进行 hook
+ * @param mi
+ */
 static void xh_core_hook_impl(xh_core_map_info_t *mi) {
     //init
     if (0 != xh_elf_init(&(mi->elf), mi->base_addr, mi->pathname)) return;
@@ -276,7 +281,28 @@ static void xh_core_hook(xh_core_map_info_t *mi) {
     }
 }
 
+static int callback(struct dl_phdr_info *info, size_t size, void *data) {
+    xh_core_map_info_t *mi;
+    if (!strstr(info->dlpi_name, "base.apk")) {
+        return 0;
+    }
+    XH_LOG_INFO("hook name=%s address=%" PRIxPTR ", (%d segments)\n", info->dlpi_name,
+                info->dlpi_addr, info->dlpi_phnum);
+    if (NULL == (mi = (xh_core_map_info_t *) malloc(sizeof(xh_core_map_info_t)))) return 0;
+    if (NULL == (mi->pathname = strdup(info->dlpi_name))) {
+        free(mi);
+        return 0;
+    }
+    mi->base_addr = info->dlpi_addr;
+    xh_core_hook(mi); //hook
+    return 0;
+}
+
 static void xh_core_refresh_impl() {
+    dl_iterate_phdr(callback, NULL);
+}
+
+static void xh_core_refresh_impl_old() {
     char line[512];
     FILE *fp;
     uintptr_t base_addr;
@@ -342,7 +368,7 @@ static void xh_core_refresh_impl() {
                         if (NULL == ii->symbol) {
                             goto check_finished;
                         }
-                        if (0 == strcmp(ii->symbol, hi->symbol)){
+                        if (0 == strcmp(ii->symbol, hi->symbol)) {
                             goto check_continue;
                         }
                     }

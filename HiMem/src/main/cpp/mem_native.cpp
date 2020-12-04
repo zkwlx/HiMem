@@ -24,7 +24,7 @@ JavaVM *g_vm = nullptr;
 jobject g_obj = nullptr;
 
 // 默认 1MB
-static uint64_t SIZE_THRESHOLD = 1040384;
+static uint SIZE_THRESHOLD = 1040384;
 
 // 用于 mmap/munmap 去重
 thread_local set<uintptr_t> addressSet;
@@ -88,6 +88,26 @@ void memDump(JNIEnv *env, jobject thiz) {
     dumpToFile();
 }
 
+/**
+ * 只是为了模拟 pthread_internal_t 结构的内存布局，不做实际用途
+ */
+void forTestClassLayout() {
+    ClassLayout layout{};
+    size_t next_offset = offsetof(ClassLayout, next);
+    size_t prev_offset = offsetof(ClassLayout, prev);
+    size_t tid_offset = offsetof(ClassLayout, tid);
+    size_t cache_pid_offset = offsetof(ClassLayout, cached_pid_);
+    size_t attr_pid_offset = offsetof(ClassLayout, attr);
+    LOGI("ClassLayout:\nnext:%d, prev:%d, tid:%d, cachePid:%d, attr:%d", next_offset, prev_offset,
+         tid_offset, cache_pid_offset, attr_pid_offset);
+    layout.tid = 10086;
+    void *p = &layout;
+    uintptr_t sp = (uintptr_t) p;
+    uintptr_t tid = sp + 16U;
+    const int *tidP = (int *) tid;
+    LOGI("==================> tid:%d ", *tidP);
+}
+
 string fdToLink(int fd) {
     if (fd > 0) {
         string fdPath = "/proc/self/fd/";
@@ -141,6 +161,8 @@ void callOnMmap(void *addr, size_t length, int prot, int flags, int fd, off_t of
     onMmap(addr, length, prot, flags, fd, offset);
 }
 
+#include <cinttypes>
+
 void callOnMunmap(void *addr, size_t length) {
     if (length < SIZE_THRESHOLD) {
         return;
@@ -148,8 +170,8 @@ void callOnMunmap(void *addr, size_t length) {
     auto address = reinterpret_cast<uintptr_t>(addr);
     int success = addressSet.erase(address);
     if (!success) {
-        // 对同一个地址多次 munmap(可能因为 hook 过多导致)，跳过
-        return;
+        // 对同一个地址多次 munmap(可能因为 hook 过多导致)，
+        // 不过没必要跳过，因为有跨线程 munmap 的情况，比如 pthread 的创建和退出流程
     }
     munmap_info info{
             .address = address,

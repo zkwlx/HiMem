@@ -230,7 +230,7 @@ class BarPlotMaker(BaseMaker):
 
     def removeForMunmaped(self, munmapEvent: Event, newEventList: list):
         """
-        删除 newEventList 中被 munmap 掉的 event
+        删除 newEventList 中被 munmap 掉的 event，只要 address 一致就删除
         :param munmapEvent:
         :param newEventList:
         :return:

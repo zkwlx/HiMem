@@ -50,17 +50,14 @@
 
 #define XH_VERSION_STR_FULL "libxhook "XH_VERSION_STR" ("XH_VERSION_ARCH")"
 
-unsigned int xh_version()
-{
+unsigned int xh_version() {
     return XH_VERSION;
 }
 
-const char *xh_version_str()
-{
+const char *xh_version_str() {
     return XH_VERSION_STR;
 }
 
-const char *xh_version_str_full()
-{
+const char *xh_version_str_full() {
     return XH_VERSION_STR_FULL;
 }

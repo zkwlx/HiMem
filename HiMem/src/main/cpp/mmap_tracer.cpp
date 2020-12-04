@@ -4,6 +4,7 @@
 
 #include "mmap_tracer.h"
 #include <cerrno>
+#include <cinttypes>
 
 extern "C" {
 #include "log.h"
@@ -52,7 +53,7 @@ void writeLine(char *line, size_t size) {
 void mmapForModeLog(mmap_info *data) {
     char *content;
     // 样例：mmap[]0xee6891[]104800[]prot[]flag[]fd[]fdLink[]java/lang/String.get|com/zhihu/A.mmm|xxx
-    size_t size = asprintf(&content, "%s[]%u[]%d[]%d[]%d[]%d[]%s[]%s\n", INFO_MMAP,
+    size_t size = asprintf(&content, "%s[]%" PRIuPTR "[]%d[]%d[]%d[]%d[]%s[]%s\n", INFO_MMAP,
                            data->address, data->length, data->prot, data->flag, data->fd,
                            data->fdLink.c_str(), data->stack.c_str());
     if (size > 0) {
@@ -68,7 +69,8 @@ void mmapForModeLog(mmap_info *data) {
 void munmapForModeLog(munmap_info *data) {
     char *content;
     // 样例：munmmap[]0xee6891[]104800
-    size_t size = asprintf(&content, "%s[]%u[]%d\n", INFO_MUNMMAP, data->address, data->length);
+    size_t size = asprintf(&content, "%s[]%" PRIuPTR "[]%d\n", INFO_MUNMMAP, data->address,
+                           data->length);
     if (size > 0) {
         writeLine(content, size);
         free(content);

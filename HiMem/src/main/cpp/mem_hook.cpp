@@ -5,9 +5,12 @@
 #include <string>
 #include <unistd.h>
 #include <sys/mman.h>
+#include <asm/unistd.h>
+#include <pthread.h>
 #include "mem_hook.h"
 #include "mem_native.h"
 #include "mem_stack.h"
+#include "fb_unwinder/runtime.h"
 
 extern "C" {
 #include "log.h"
@@ -38,21 +41,29 @@ int my_munmap(void *addr, size_t length) {
     return result;
 }
 
+pthread_attr_t *getAttrFromInternal() {
+    // Android 9.0
+    void *pthread_internal = __get_tls()[1];
+    auto sp = (uintptr_t) pthread_internal;
+    auto attr = sp + 24U;
+    auto *attrP = (pthread_attr_t *) attr;
+    return attrP;
+}
+
+void my_pthread_exit(void *return_value) {
+    pthread_attr_t *attr = getAttrFromInternal();
+    if (attr->stack_size != 0) {
+        callOnMunmap(attr->stack_base, attr->stack_size);
+    }
+    pthread_exit(return_value);
+}
+
 void do_hook() {
     //追踪某些调用 (忽略 linker 和 linker64)
-//    xhook_register("^/system/.*$", "mmap", my_mmap, NULL);
-//    xhook_register("^/vendor/.*$", "mmap", my_mmap, NULL);
-//    xhook_register("^/sys/kernel", "mmap", my_mmap, NULL);
-//    xhook_register("^/vendor/.*$", "munmap", my_munmap, NULL);
-    xhook_register(".*", "mmap", (void *) my_mmap, NULL);
-    xhook_register(".*", "mmap64", (void *) my_mmap64, NULL);
-    xhook_register(".*", "munmap", (void *) my_munmap, NULL);
-//    xhook_register(".*/libart.so$", "mmap", my_mmap, NULL);
-//    xhook_register(".*/libc.so$", "mmap", my_mmap, NULL);
-//    xhook_register(".*/libart.so$", "mmap64", my_mmap64, NULL);
-//    xhook_register(".*/libc.so$", "mmap64", my_mmap64, NULL);
-//    xhook_register(".*/libart.so$", "munmap", my_munmap, NULL);
-//    xhook_register(".*/libc.so$", "munmap", my_munmap, NULL);
+    xhook_register(".*", "mmap", (void *) my_mmap, nullptr);
+    xhook_register(".*", "mmap64", (void *) my_mmap64, nullptr);
+    xhook_register(".*", "munmap", (void *) my_munmap, nullptr);
+    xhook_register(".*/libc.so$", "pthread_exit", (void *) my_pthread_exit, nullptr);
     xhook_ignore(".*/linker$", "mmap");
     xhook_ignore(".*/linker$", "mmap64");
     xhook_ignore(".*/linker$", "munmap");
@@ -65,8 +76,8 @@ void do_hook() {
 //    xhook_register(".so library", "printf", my_printf, (void*)&orig_printf);
 
     // 不要 hook 我们自己
-    xhook_ignore(".*/libhimem-native.so$", NULL);
-    xhook_ignore(".*/liblog.so$", NULL);
+    xhook_ignore(".*/libhimem-native.so$", nullptr);
+    xhook_ignore(".*/liblog.so$", nullptr);
     // 启动 hook 机制
     xhook_enable_debug(1);
     xhook_enable_sigsegv_protection(1);

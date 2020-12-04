@@ -5,7 +5,7 @@ object MemTest {
 
     external fun mmapSmall()
 
-    external fun signalTest()
+    external fun munmapSmall()
 
     fun initNative() {
 

@@ -38,6 +38,7 @@ add_library(
         xhook/xh_util.c
         xhook/xh_version.c
         xhook/xhook.c
+        xhook/xhook_assist.cpp
 )
 
 # 暂时不用 looper 实现

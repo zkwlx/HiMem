@@ -37,6 +37,10 @@ int xhook_refresh(int async) {
     return xh_core_refresh(async);
 }
 
+int xhook_refresh_for_iterate() {
+    return xh_core_refresh_for_iterate();
+}
+
 void xhook_clear() {
     return xh_core_clear();
 }

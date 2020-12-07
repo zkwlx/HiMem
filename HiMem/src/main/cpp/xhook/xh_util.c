@@ -54,10 +54,10 @@ int xh_util_get_mem_protect(uintptr_t addr, size_t len, const char *pathname, un
     *prot = 0;
 
     if (NULL == (fp = fopen("/proc/self/maps", "r"))) return XH_ERRNO_BADMAPS;
-
     while (fgets(line, sizeof(line), fp)) {
         if (NULL != pathname)
-            if (NULL == strstr(line, pathname)) continue;
+            // hihmem: 如果 line 不包含 pathname 或 base.apk 则跳过，因为 apk 里的 so 是直接映射 base.apk 的
+            if (NULL == strstr(line, pathname) && NULL == strstr(line, "base.apk")) continue;
 
         if (sscanf(line, "%"PRIxPTR"-%"PRIxPTR" %4s ", &start, &end, perm) != 3) continue;
 

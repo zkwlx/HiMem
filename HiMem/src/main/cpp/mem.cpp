@@ -9,7 +9,7 @@
 #include <set>
 
 #include "mem_hook.h"
-#include "mem_native.h"
+#include "mem.h"
 #include "fb_unwinder/runtime.h"
 #include "mmap_tracer.h"
 #include "mem_stack.h"
@@ -26,7 +26,7 @@ jobject g_obj = nullptr;
 // 默认 1MB
 static uint SIZE_THRESHOLD = 1040384;
 
-// 用于 mmap/munmap 去重
+// 用于 mmap/munmap 去重（处于性能考虑不加锁，而是用线程私有数据，可能有失严谨，无关紧要）
 thread_local set<uintptr_t> addressSet;
 
 void setEnv(JNIEnv *env, jobject obj) {
@@ -46,7 +46,7 @@ void setDebug(JNIEnv *env, jobject thiz, jint enable) {
 
 static struct sigaction oldAction{};
 
-void sigHandler(int sig) {
+static void sigHandler(int sig) {
     if (canJump) {
         siglongjmp(jumpEnv, 1);
     } else {
@@ -78,14 +78,18 @@ void init(JNIEnv *env, jobject thiz, jstring dumpDir, jlong mmapSizeThreshold) {
     do_hook();
 }
 
+void refreshHookForDl(JNIEnv *env, jobject thiz) {
+    rehook_for_iterate();
+}
+
 void deInit(JNIEnv *env, jobject thiz) {
     clear_hook();
     tracerDestroy();
     clearEnv(env);
 }
 
-void memDump(JNIEnv *env, jobject thiz) {
-    dumpToFile();
+void memFlush(JNIEnv *env, jobject thiz) {
+    flushToFile();
 }
 
 /**
@@ -108,7 +112,7 @@ void forTestClassLayout() {
     LOGI("==================> tid:%d ", *tidP);
 }
 
-string fdToLink(int fd) {
+static string fdToLink(int fd) {
     if (fd > 0) {
         string fdPath = "/proc/self/fd/";
         fdPath.append(to_string(fd));
@@ -123,7 +127,7 @@ string fdToLink(int fd) {
     }
 }
 
-void onMmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset) {
+static void onMmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset) {
     if (length < SIZE_THRESHOLD) {
         // 小内存分配，忽略
         return;
@@ -161,8 +165,6 @@ void callOnMmap(void *addr, size_t length, int prot, int flags, int fd, off_t of
     onMmap(addr, length, prot, flags, fd, offset);
 }
 
-#include <cinttypes>
-
 void callOnMunmap(void *addr, size_t length) {
     if (length < SIZE_THRESHOLD) {
         return;
@@ -199,10 +201,11 @@ void callJava(void *addr, size_t length, int prot, int flags, int fd, off_t offs
 }
 
 static JNINativeMethod methods[] = {
-        {"setDebug", "(I)V",                   (void *) setDebug},
-        {"init",     "(Ljava/lang/String;J)V", (void *) init},
-        {"deInit",   "()V",                    (void *) deInit},
-        {"memDump",  "()V",                    (void *) memDump},
+        {"setDebug",         "(I)V",                   (void *) setDebug},
+        {"init",             "(Ljava/lang/String;J)V", (void *) init},
+        {"deInit",           "()V",                    (void *) deInit},
+        {"memFlush",         "()V",                    (void *) memFlush},
+        {"refreshHookForDl", "()V",                    (void *) refreshHookForDl},
 };
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {

@@ -1,47 +1,32 @@
 package com.himem
 
-import android.util.Log
-
 object HiMemNative {
 
     external fun setDebug(enable: Int)
 
+    /**
+     * 初始化 himem，包括创建 .himem 日志文件，初始化信号处理、xhook等
+     *
+     * @param dumpDir .himem 文件的父目录
+     * @param mmapSizeThreshold mmap 阈值，超过阈值时触发监控逻辑
+     */
     external fun init(dumpDir: String, mmapSizeThreshold: Long)
 
+    /**
+     * 结束监控，包括取消 xhook、关闭日志文件等
+     */
     external fun deInit()
 
-    external fun memDump()
+    /**
+     * 手动将内存中的日志刷到磁盘
+     */
+    external fun memFlush()
 
-    fun onMmap(addr: Long, length: Long, prot: Int, flags: Int, fd: Int, offset: Long) {
-        Log.i(
-            "zkw",
-            "mmap > addr:$addr, \nstack:${stackTraceToString(Thread.currentThread().stackTrace)}"
-        )
-    }
+    /**
+     * 采用 dl_iterate_phdr() 回调的方式触发新 so 的 hook（有些 so 是运行时加载的）
+     */
+    external fun refreshHookForDl()
 
-    fun onMunmap(addr: Long, length: Long) {
-        Log.i(
-            "zkw",
-            "munmap > addr:$addr"
-        )
-    }
-
-    private fun stackTraceToString(elements: Array<StackTraceElement?>): String {
-        val stackString = StringBuilder()
-        if (elements.isEmpty()) {
-            return stackString.toString()
-        }
-        for (e in elements) {
-            if (e == null) {
-                continue
-            }
-            stackString.append("\n").append(e.toString())
-        }
-        stackString.append("\n")
-        return stackString.toString()
-    }
-
-    // Used to load the 'native-lib' library on application startup.
     init {
         System.loadLibrary("himem-native")
     }

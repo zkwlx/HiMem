@@ -9,6 +9,8 @@ void set_hook_debug(int enable);
 
 void do_hook();
 
+int rehook_for_iterate();
+
 void clear_hook();
 
 #endif //SOCKETS_NATIVE_SOCKET_HOOK_H

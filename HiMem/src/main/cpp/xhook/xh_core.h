@@ -28,6 +28,8 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
+
 int xh_core_register(const char *pathname_regex_str, const char *symbol,
                      void *new_func, void **old_func);
 
@@ -40,6 +42,12 @@ void xh_core_clear();
 void xh_core_enable_debug(int flag);
 
 void xh_core_enable_sigsegv_protection(int flag);
+
+// ================= himem modify for so in apk
+int xh_core_hook_for_iterate(const char *name, uintptr_t base_addr);
+
+int xh_core_refresh_for_iterate();
+// ================= himem modify for so in apk
 
 #ifdef __cplusplus
 }

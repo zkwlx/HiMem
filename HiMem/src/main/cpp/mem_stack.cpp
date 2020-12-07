@@ -65,7 +65,6 @@ bool obtainStack(std::string &stack) {
                 stack.append(desc.substr(1, desc.size() - 2))
                         .append(".").append(data.method_names[i]).append(STACK_ELEMENT_DIV);
             }
-            LOGI("unwind success!!!:%d", stack.length());
             return true;
         } else {
             LOGI("unwind failed!!!!");

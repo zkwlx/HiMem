@@ -34,6 +34,6 @@ void postOnMmap(mmap_info *data);
 
 void postOnMunmap(munmap_info *data);
 
-void dumpToFile();
+void flushToFile();
 
 #endif //MEMORY_MMAP_TRACER_H

@@ -23,7 +23,7 @@ static std::string os_version = get_system_property("ro.build.version.release");
 
 auto unwind(unwind_callback_t _unwind_callback, void *_unwind_data) -> bool {
     bool result = false;
-    LOGI("os version ============> %s", os_version.c_str());
+//    LOGI("os version ============> %s", os_version.c_str());
     if (os_version == "9") {
         result = unwind_900(_unwind_callback, _unwind_data);
     } else if (os_version == "8.1.0") {

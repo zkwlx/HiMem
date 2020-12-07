@@ -35,6 +35,9 @@ int modeFlag = MODE_LOG;
 // 三、在内存里统一维护，mmap 时增，munmap 时减，在某个时间点保存到文件，用于观察当前进程内存分配状态
 
 void writeLine(char *line, size_t size) {
+    if (dumpFile == nullptr) {
+        return;
+    }
     static atomic_size_t wroteSize(0);
     int sizeChar = sizeof(char);
     size_t count = fwrite(line, sizeChar, size / sizeChar, dumpFile);
@@ -102,7 +105,7 @@ void postOnMunmap(munmap_info *data) {
     munmapForModeLog(data);
 }
 
-void dumpToFile() {
+void flushToFile() {
     if (dumpFile != nullptr) {
         fflush(dumpFile);
     }

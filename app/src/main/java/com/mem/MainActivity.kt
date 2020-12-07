@@ -23,13 +23,14 @@ class MainActivity : AppCompatActivity() {
 
     fun onButtonClick(view: View) {
 //        MemTest.stringFromJNI()
+        MemTest.initNative()
 //        File(externalCacheDir, "pmapBefore.txt").writeText(ProcUtils.getPmap())
-        repeat(500) {
+        repeat(5) {
             Log.i("zkw", "------> $it")
             Thread(Thread.currentThread().threadGroup, {
-//                MemTest.mmapSmall()
+                MemTest.mmapSmall()
                 Thread.sleep(1000)
-            }, "xxx$it", 5 * 1024 * 1024).start()
+            }, "xxx$it", 1 * 1024 * 1024).start()
         }
 //        val length = 512L * 1024 * 1024
 //        val file = File(externalCacheDir, "xxxxx.txt")
@@ -56,8 +57,8 @@ class MainActivity : AppCompatActivity() {
 
     fun onDumpClick(view: View) {
         dumpCount++
-        HiMemNative.memDump()
-//        File(externalCacheDir, "maps_$dumpCount.txt").writeText(ProcUtils.getPidMaps())
+        HiMemNative.memFlush()
+        File(externalCacheDir, "maps_$dumpCount.txt").writeText(ProcUtils.getPidMaps())
     }
 
 

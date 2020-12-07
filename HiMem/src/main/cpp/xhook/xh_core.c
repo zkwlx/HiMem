@@ -39,6 +39,7 @@
 #include "xh_elf.h"
 #include "xh_version.h"
 #include "xh_core.h"
+#include "xhook_assist.h"
 
 #define XH_CORE_DEBUG 0
 
@@ -236,6 +237,9 @@ static int xh_core_check_elf_header(uintptr_t base_addr, const char *pathname) {
  * @param mi
  */
 static void xh_core_hook_impl(xh_core_map_info_t *mi) {
+    // 添加到 hooked 集合，避免后期刷新时重复 hook
+    add_to_hooked_set(mi->base_addr);
+
     //init
     if (0 != xh_elf_init(&(mi->elf), mi->base_addr, mi->pathname)) return;
 
@@ -267,6 +271,7 @@ static void xh_core_hook_impl(xh_core_map_info_t *mi) {
     }
 }
 
+
 static void xh_core_hook(xh_core_map_info_t *mi) {
     if (!xh_core_sigsegv_enable) {
         xh_core_hook_impl(mi);
@@ -281,28 +286,7 @@ static void xh_core_hook(xh_core_map_info_t *mi) {
     }
 }
 
-static int callback(struct dl_phdr_info *info, size_t size, void *data) {
-    xh_core_map_info_t *mi;
-    if (!strstr(info->dlpi_name, "base.apk")) {
-        return 0;
-    }
-    XH_LOG_INFO("hook name=%s address=%" PRIxPTR ", (%d segments)\n", info->dlpi_name,
-                info->dlpi_addr, info->dlpi_phnum);
-    if (NULL == (mi = (xh_core_map_info_t *) malloc(sizeof(xh_core_map_info_t)))) return 0;
-    if (NULL == (mi->pathname = strdup(info->dlpi_name))) {
-        free(mi);
-        return 0;
-    }
-    mi->base_addr = info->dlpi_addr;
-    xh_core_hook(mi); //hook
-    return 0;
-}
-
 static void xh_core_refresh_impl() {
-    dl_iterate_phdr(callback, NULL);
-}
-
-static void xh_core_refresh_impl_old() {
     char line[512];
     FILE *fp;
     uintptr_t base_addr;
@@ -478,7 +462,12 @@ static void *xh_core_refresh_thread_func(void *arg) {
 
         //refresh
         pthread_mutex_lock(&xh_core_refresh_mutex);
+        // 使用 /proc/self/maps 方式收集 so 并 hook
         xh_core_refresh_impl();
+        // 之后立马更新 dl 中的 hookedSet，因为 dl_iterate 中的 so 可能与 maps 中地址不一样从而导致hook失败
+        // 并且首次遍历的 so 除了是已 hook 的就是无法 hook 的，所以为了降低风险这里只更新集合不进行 hook
+        set_callback_doHook(FALSE);
+        dl_iterate_phdr(dl_callback, NULL);
         pthread_mutex_unlock(&xh_core_refresh_mutex);
     }
 
@@ -541,6 +530,44 @@ static void xh_core_init_async_once() {
     pthread_mutex_unlock(&xh_core_mutex);
 }
 
+// ================= himem modify for so in apk
+
+/**
+ * 通过 dl_iterate_phdr 获取的库信息，创建 mi 并传递给 xh_core_hook()
+ * @param name
+ * @param base_addr
+ * @return
+ */
+int xh_core_hook_for_iterate(const char *name, uintptr_t base_addr) {
+    xh_core_map_info_t *mi;
+    if (NULL == (mi = (xh_core_map_info_t *) malloc(sizeof(xh_core_map_info_t))))
+        return 0;
+    if (NULL == (mi->pathname = strdup(name))) {
+        free(mi);
+        return 0;
+    }
+    mi->base_addr = base_addr;
+    xh_core_hook(mi); //hook
+    return 0;
+}
+
+/**
+ * 提供一种通过 dl_iterate_phdr 回调获取所有动态库的方式并 hook。同步操作
+ * @return
+ */
+int xh_core_refresh_for_iterate() {
+    xh_core_init_once();
+    if (!xh_core_init_ok) return XH_ERRNO_UNKNOWN;
+
+    pthread_mutex_lock(&xh_core_refresh_mutex);
+    set_callback_doHook(TRUE);
+    dl_iterate_phdr(dl_callback, NULL);
+    pthread_mutex_unlock(&xh_core_refresh_mutex);
+    return 0;
+}
+// ================= himem modify end
+
+
 int xh_core_refresh(int async) {
     //init
     xh_core_init_once();
@@ -559,7 +586,12 @@ int xh_core_refresh(int async) {
     } else {
         //refresh sync
         pthread_mutex_lock(&xh_core_refresh_mutex);
+        // 使用 /proc/self/maps 方式收集 so 并 hook
         xh_core_refresh_impl();
+        // 之后立马更新 dl 中的 hookedSet，因为 dl_iterate 中的 so 可能与 maps 中地址不一样从而导致hook失败
+        // 并且首次遍历的 so 除了是已 hook 的就是无法 hook 的，所以为了降低风险这里只更新集合不进行 hook
+        set_callback_doHook(FALSE);
+        dl_iterate_phdr(dl_callback, NULL);
         pthread_mutex_unlock(&xh_core_refresh_mutex);
     }
 

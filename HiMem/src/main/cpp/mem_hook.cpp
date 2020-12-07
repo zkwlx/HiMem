@@ -8,7 +8,7 @@
 #include <asm/unistd.h>
 #include <pthread.h>
 #include "mem_hook.h"
-#include "mem_native.h"
+#include "mem.h"
 #include "mem_stack.h"
 #include "fb_unwinder/runtime.h"
 
@@ -60,9 +60,9 @@ void my_pthread_exit(void *return_value) {
 
 void do_hook() {
     //追踪某些调用 (忽略 linker 和 linker64)
-    xhook_register(".*", "mmap", (void *) my_mmap, nullptr);
-    xhook_register(".*", "mmap64", (void *) my_mmap64, nullptr);
-    xhook_register(".*", "munmap", (void *) my_munmap, nullptr);
+    xhook_register(".*\\.so$", "mmap", (void *) my_mmap, nullptr);
+    xhook_register(".*\\.so$", "mmap64", (void *) my_mmap64, nullptr);
+    xhook_register(".*\\.so$", "munmap", (void *) my_munmap, nullptr);
     xhook_register(".*/libc.so$", "pthread_exit", (void *) my_pthread_exit, nullptr);
     xhook_ignore(".*/linker$", "mmap");
     xhook_ignore(".*/linker$", "mmap64");
@@ -82,6 +82,10 @@ void do_hook() {
     xhook_enable_debug(1);
     xhook_enable_sigsegv_protection(1);
     xhook_refresh(0);
+}
+
+int rehook_for_iterate() {
+    return xhook_refresh_for_iterate();
 }
 
 void clear_hook() {

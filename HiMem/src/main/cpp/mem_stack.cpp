@@ -56,25 +56,26 @@ bool obtainStack(std::string &stack) {
             .depth = 0,
             .max_depth = MAX_STACK_DEPTH,
     };
-
+    canJump = true;
+    bool result;
     if (sigsetjmp(jumpEnv, 1) == 0) {
-        canJump = true;
         if (unwind(&unwind_cb, &data)) {
             for (int i = 0; i < data.depth; i++) {
                 std::string desc = data.class_descriptors[i];
                 stack.append(desc.substr(1, desc.size() - 2))
                         .append(".").append(data.method_names[i]).append(STACK_ELEMENT_DIV);
             }
-            return true;
+            result = true;
         } else {
             LOGI("unwind failed!!!!");
-            return false;
+            result = false;
         }
     } else {// jump
-        LOGI("SIGSEGV!! skip ================!!");
+        LOGI("SIGSEGV!! skip obtainStack() !!");
         stack.append("stack unwind error").append(STACK_ELEMENT_DIV);
-        return false;
+        result = false;
     }
-
+    canJump = false;
+    return result;
 
 }

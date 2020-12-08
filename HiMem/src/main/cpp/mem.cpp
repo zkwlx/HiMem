@@ -50,7 +50,7 @@ static void sigHandler(int sig) {
     if (canJump) {
         siglongjmp(jumpEnv, 1);
     } else {
-        LOGE("can't jump, because not invoke sigsetjmp!");
+        LOGE("Don't jump, because not obtainStack()!");
         oldAction.sa_handler(sig);
     }
 }

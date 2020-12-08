@@ -93,10 +93,14 @@ static sigjmp_buf xh_core_sigsegv_env;
 static void xh_core_sigsegv_handler(int sig) {
     (void) sig;
 
-    if (xh_core_sigsegv_flag)
+    if (xh_core_sigsegv_flag) {
         siglongjmp(xh_core_sigsegv_env, 1);
-    else
-        sigaction(SIGSEGV, &xh_core_sigsegv_act_old, NULL);
+    } else {
+        // himem modify: 注释掉的原逻辑会清除当前 handler，合理的做法是回调 old handler
+        XH_LOG_INFO("Don't jump, because not hooking");
+        xh_core_sigsegv_act_old.sa_handler(sig);
+        // sigaction(SIGSEGV, &xh_core_sigsegv_act_old, NULL);
+    }
 }
 
 static int xh_core_add_sigsegv_handler() {
@@ -239,7 +243,6 @@ static int xh_core_check_elf_header(uintptr_t base_addr, const char *pathname) {
 static void xh_core_hook_impl(xh_core_map_info_t *mi) {
     // 添加到 hooked 集合，避免后期刷新时重复 hook
     add_to_hooked_set(mi->base_addr);
-
     //init
     if (0 != xh_elf_init(&(mi->elf), mi->base_addr, mi->pathname)) return;
 
@@ -271,12 +274,12 @@ static void xh_core_hook_impl(xh_core_map_info_t *mi) {
     }
 }
 
-
 static void xh_core_hook(xh_core_map_info_t *mi) {
     if (!xh_core_sigsegv_enable) {
         xh_core_hook_impl(mi);
     } else {
         xh_core_sigsegv_flag = 1;
+        // 进入 xh_core_sigsegv_flag 保护区域，发生 SIGSEGV 会跳过
         if (0 == sigsetjmp(xh_core_sigsegv_env, 1)) {
             xh_core_hook_impl(mi);
         } else {

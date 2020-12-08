@@ -79,6 +79,7 @@ void do_hook() {
     xhook_ignore(".*/libhimem-native.so$", nullptr);
     xhook_ignore(".*/liblog.so$", nullptr);
     // 启动 hook 机制
+    //TODO 关闭debug
     xhook_enable_debug(1);
     xhook_enable_sigsegv_protection(1);
     xhook_refresh(0);

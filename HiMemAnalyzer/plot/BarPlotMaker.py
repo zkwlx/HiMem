@@ -12,15 +12,12 @@ from plot.BaseMaker import BaseMaker
 from plot.PlotInfo import PlotInfo
 from utils.SizeUtils import convertSize
 
-"""
-主要是针对 Thread.nativeCreate 和 CursorWindow.nativeCreate 分类是否展开
-如果不展开，且堆栈前缀是上面这两种直接归为一类
-"""
-PREFIX_CURSOR = "android/database/CursorWindow.nativeCreate"
-PREFIX_THREAD = "java/lang/Thread.nativeCreate"
-
 
 class AggEvent:
+    """
+    聚合后的 Event 类，包括各种聚合信息的集合
+    """
+
     def __init__(self, expand: bool):
         # (length, protect, flag)
         self.mask = ()
@@ -28,6 +25,7 @@ class AggEvent:
         self.flagStr = ""
         self.perLengthStr = ""
         self.stack = ""
+        self.stackFirstLine = ""
         self.totalLength = 0
         self.count = 0
         self.addressSet = set()
@@ -45,9 +43,8 @@ class AggEvent:
             # 展开模式，需要完全匹配 stack
             return self.stack == other.stack
         else:
-            # 非展开模式，只匹配 stack 的前缀，目前只判断 Cursor 和 Thread 两大类
-            return (self.stack.startswith(PREFIX_CURSOR) and other.stack.startswith(PREFIX_CURSOR)) or \
-                   (self.stack.startswith(PREFIX_THREAD) and other.stack.startswith(PREFIX_THREAD))
+            # 非展开模式，只匹配 stack 的第一行
+            return self.stackFirstLine == other.stackFirstLine
 
 
 class FlatEvent:
@@ -169,6 +166,7 @@ class BarPlotMaker(BaseMaker):
             aggEvent = AggEvent(self.isExpand)
             aggEvent.mask = (event.length, event.protect, event.flag)
             aggEvent.stack = event.stack
+            aggEvent.stackFirstLine = self.getStackFirstLine(event.stack)
             overallLength += event.length
             if aggEvent in aggEventList:
                 index = aggEventList.index(aggEvent)
@@ -188,12 +186,8 @@ class BarPlotMaker(BaseMaker):
             flat.numberList.append(index)
             flat.maskList.append(aggItem.mask)
             flat.addressSetList.append(aggItem.addressSet)
-            if not self.isExpand and aggItem.stack != "":  # 非展开模式，只保留堆栈第一行
-                try:
-                    i = aggItem.stack.index("\n")
-                    flat.stackList.append(aggItem.stack[0:i])
-                except ValueError:
-                    print(aggItem.stack)
+            if not self.isExpand and aggItem.stackFirstLine != "":  # 非展开模式，只保留堆栈第一行
+                flat.stackList.append(aggItem.stackFirstLine)
             else:
                 flat.stackList.append(aggItem.stack)
             flat.totalLengthStr.append(convertSize(aggItem.totalLength))
@@ -207,6 +201,20 @@ class BarPlotMaker(BaseMaker):
             flat.proportionList.append("%.2f%%" % (proportion * 100))
 
         return flat
+
+    def getStackFirstLine(self, stack: str) -> str:
+        """
+        返回堆栈第一行
+        :param stack:
+        :return:
+        """
+        result = ""
+        try:
+            i = stack.index("\n")
+            result = stack[0:i]
+        except ValueError:
+            print(stack)
+        return result
 
     def aggItemGrowth(self, aggItem: AggEvent, event: Event):
         aggItem.count += 1

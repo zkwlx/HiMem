@@ -19,8 +19,8 @@ class MyApplication : Application() {
         root.mkdirs()
         HiMemNative.init(root.absolutePath, 0)
         thread {
-            repeat(5) {
-                Thread.sleep(10 * 1000)
+            repeat(50) {
+                Thread.sleep(20 * 1000)
                 Log.i("zkw", "刷新第 $it 次")
                 HiMemNative.refreshHookForDl()
             }

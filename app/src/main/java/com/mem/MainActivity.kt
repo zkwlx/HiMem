@@ -57,7 +57,7 @@ class MainActivity : AppCompatActivity() {
 
     fun onDumpClick(view: View) {
         dumpCount++
-        HiMemNative.memFlush()
+        HiMemNative.flushFile()
         File(externalCacheDir, "maps_$dumpCount.txt").writeText(ProcUtils.getPidMaps())
     }
 

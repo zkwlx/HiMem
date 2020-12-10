@@ -15,24 +15,12 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
-        externalNativeBuild {
-            cmake {
-                cppFlags ""
-            }
-        }
     }
 
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
-    }
-
-    externalNativeBuild {
-        cmake {
-            path "src/main/cpp/CMakeLists.txt"
-            version "3.10.2"
         }
     }
     compileOptions {
@@ -47,22 +35,3 @@ android {
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 }
-
-
-//TODO maven local ======
-apply plugin: 'maven'
-group = "zhihu.himem"
-archivesBaseName = "himem"
-version = '0.0.10-SNAPSHOT'
-uploadArchives {
-    doFirst {
-        System.out.println("============uploadArchives for local: $version")
-    }
-    repositories {
-        mavenDeployer {
-            repository(url: mavenLocal().url)
-        }
-    }
-    finalizedBy(clean)
-}
-// maven local =======

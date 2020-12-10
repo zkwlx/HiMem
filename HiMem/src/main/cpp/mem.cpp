@@ -65,8 +65,12 @@ static void initSigaction() {
     }
 }
 
-void init(JNIEnv *env, jobject thiz, jstring dumpDir, jlong mmapSizeThreshold) {
+extern uint FLUSH_THRESHOLD;
+
+void
+init(JNIEnv *env, jobject thiz, jstring dumpDir, jlong mmapSizeThreshold, jlong flushThreshold) {
     SIZE_THRESHOLD = mmapSizeThreshold;
+    FLUSH_THRESHOLD = flushThreshold;
     // set global env
     setEnv(env, thiz);
     char *dumpDirChar = const_cast<char *>(env->GetStringUTFChars(dumpDir, JNI_FALSE));
@@ -201,11 +205,11 @@ void callJava(void *addr, size_t length, int prot, int flags, int fd, off_t offs
 }
 
 static JNINativeMethod methods[] = {
-        {"setDebug",         "(I)V",                   (void *) setDebug},
-        {"init",             "(Ljava/lang/String;J)V", (void *) init},
-        {"deInit",           "()V",                    (void *) deInit},
-        {"memFlush",         "()V",                    (void *) memFlush},
-        {"refreshHookForDl", "()V",                    (void *) refreshHookForDl},
+        {"setDebug",         "(I)V",                    (void *) setDebug},
+        {"init",             "(Ljava/lang/String;JJ)V", (void *) init},
+        {"deInit",           "()V",                     (void *) deInit},
+        {"memFlush",         "()V",                     (void *) memFlush},
+        {"refreshHookForDl", "()V",                     (void *) refreshHookForDl},
 };
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {

@@ -1,6 +1,20 @@
 package com.himem
 
+import android.os.Build
+
 object HiMemNative {
+
+    init {
+        System.loadLibrary("himem-native")
+    }
+
+    /**
+     * 判断系统是否支持
+     */
+    fun isOSSupport(): Boolean {
+        // 目前只支持 Android 9.0
+        return Build.VERSION.SDK_INT == 28
+    }
 
     external fun setDebug(enable: Int)
 
@@ -9,8 +23,9 @@ object HiMemNative {
      *
      * @param dumpDir .himem 文件的父目录
      * @param mmapSizeThreshold mmap 阈值，超过阈值时触发监控逻辑
+     * @param flushThreshold 日志回写磁盘的阈值，超过阈值 fflush
      */
-    external fun init(dumpDir: String, mmapSizeThreshold: Long)
+    external fun init(dumpDir: String, mmapSizeThreshold: Long, flushThreshold: Long)
 
     /**
      * 结束监控，包括取消 xhook、关闭日志文件等
@@ -27,7 +42,4 @@ object HiMemNative {
      */
     external fun refreshHookForDl()
 
-    init {
-        System.loadLibrary("himem-native")
-    }
 }

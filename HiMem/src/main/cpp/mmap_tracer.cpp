@@ -25,7 +25,7 @@ extern "C" {
 using namespace std;
 
 FILE *dumpFile = nullptr;
-static const int FLUSH_THRESHOLD = 3 * 1024;
+uint FLUSH_THRESHOLD = 3 * 1024;
 
 int modeFlag = MODE_LOG;
 
@@ -85,7 +85,7 @@ void createFile(char *dumpDir) {
         struct timeval stamp{};
         gettimeofday(&stamp, nullptr);
         char *filePath;
-        asprintf(&filePath, "%s/trace_%d_%ld.himem", dumpDir, modeFlag, stamp.tv_sec);
+        asprintf(&filePath, "%s/trace_%ld.himem", dumpDir, stamp.tv_sec);
         dumpFile = fopen(filePath, "ae");
         if (dumpFile == nullptr) {
             LOGE("文件打开错误：%s，错误原因：%s", filePath, strerror(errno));

@@ -17,6 +17,16 @@ extern "C" {
 #include "xhook/xhook.h"
 }
 
+#if defined(__arm__)
+#define PTHREAD_ATTR_OFFSET 16U
+#elif defined(__aarch64__)
+#define PTHREAD_ATTR_OFFSET 24U
+#elif defined(__i386__)
+#define PTHREAD_ATTR_OFFSET 16U
+#elif defined(__x86_64__)
+#define PTHREAD_ATTR_OFFSET 24U
+#endif
+
 void set_hook_debug(int enable) {
     xhook_enable_debug(enable);
     // debug 阶段关闭 segv 保护，以便发现问题，release 的时候需要开启，减少 hook 带来的线上崩溃
@@ -45,7 +55,7 @@ pthread_attr_t *getAttrFromInternal() {
     // Android 9.0
     void *pthread_internal = __get_tls()[1];
     auto sp = (uintptr_t) pthread_internal;
-    auto attr = sp + 24U;
+    auto attr = sp + PTHREAD_ATTR_OFFSET;
     auto *attrP = (pthread_attr_t *) attr;
     return attrP;
 }

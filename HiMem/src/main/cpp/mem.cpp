@@ -92,10 +92,6 @@ void deInit(JNIEnv *env, jobject thiz) {
     clearEnv(env);
 }
 
-void memFlush(JNIEnv *env, jobject thiz) {
-    flushToFile();
-}
-
 /**
  * 只是为了模拟 pthread_internal_t 结构的内存布局，不做实际用途
  */
@@ -106,14 +102,20 @@ void forTestClassLayout() {
     size_t tid_offset = offsetof(ClassLayout, tid);
     size_t cache_pid_offset = offsetof(ClassLayout, cached_pid_);
     size_t attr_pid_offset = offsetof(ClassLayout, attr);
+    // 根据打印出来的 attr 的偏移，进行相加读取
     LOGI("ClassLayout:\nnext:%d, prev:%d, tid:%d, cachePid:%d, attr:%d", next_offset, prev_offset,
          tid_offset, cache_pid_offset, attr_pid_offset);
     layout.tid = 10086;
     void *p = &layout;
     uintptr_t sp = (uintptr_t) p;
-    uintptr_t tid = sp + 16U;
+    uintptr_t tid = sp + 8U;// 其实就是 tid_offset
     const int *tidP = (int *) tid;
+    // 如果tid的值时10086说明读取成功
     LOGI("==================> tid:%d ", *tidP);
+}
+
+void memFlush(JNIEnv *env, jobject thiz) {
+    flushToFile();
 }
 
 static string fdToLink(int fd) {

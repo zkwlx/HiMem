@@ -20,6 +20,9 @@ android {
                 cppFlags ""
             }
         }
+        ndk {
+            abiFilters "x86", "armeabi-v7a"
+        }
     }
 
     buildTypes {

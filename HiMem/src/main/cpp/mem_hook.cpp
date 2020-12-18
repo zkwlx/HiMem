@@ -46,13 +46,15 @@ void *my_mmap64(void *addr, size_t length, int prot, int flags, int fd, off64_t 
 }
 
 int my_munmap(void *addr, size_t length) {
-    int result = munmap(addr, length);
+    // Android8.1 上的munmap操作后面不能有其他调用，否则段错误，不知为何
     callOnMunmap(addr, length);
+    int result = munmap(addr, length);
     return result;
 }
 
-pthread_attr_t *getAttrFromInternal() {
-    // Android 9.0
+static pthread_attr_t *getAttrFromInternal() {
+    // Android 9.0/8.1.0 结构一致
+    //TODO 添加其他版本支持时需要适配，模拟的结构参考 class_layout.h 文件
     void *pthread_internal = __get_tls()[1];
     auto sp = (uintptr_t) pthread_internal;
     auto attr = sp + PTHREAD_ATTR_OFFSET;

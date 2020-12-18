@@ -37,6 +37,9 @@ bool unwind_cb(uintptr_t frame, void *data) {
         string_t method_string_t = get_method_name(frame);
         ud->method_names[ud->depth] = method_string_t.data;
         ud->class_descriptors[ud->depth] = class_string_t.data;
+        if (class_string_t.data == nullptr) {
+            LOGE("class descriptors data is null!!!!!!!!!!!");
+        }
     }
     ++ud->depth;
     return true;

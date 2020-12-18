@@ -7,6 +7,9 @@
 
 #include <pthread.h>
 
+// pthread_internal_t 源码
+// https://cs.android.com/android/platform/superproject/+/master:bionic/libc/bionic/pthread_internal.h;drc=master;bpv=0;bpt=1;l=65
+
 class ClassLayout {
 public:
     class ClassLayout *next;

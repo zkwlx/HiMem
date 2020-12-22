@@ -15,7 +15,7 @@ static int doHook = FALSE;
 
 extern "C"
 int dl_callback(struct dl_phdr_info *info, size_t size, void *data) {
-    // 通过 data 参数控制是否真正 hook，如果不 hook，只进行集合的插入操作，这样设计的原因请参考调用方的注释
+    // 通过 doHook 控制是否真正 hook，如果不 hook，只进行集合的插入操作，这样设计的原因请参考调用方的注释
     auto result = hookedPtr.insert(info->dlpi_addr);
     if (!result.second || doHook == FALSE) {
         // 如果重复 hook 或者指定不进行 hook，跳过

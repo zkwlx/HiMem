@@ -696,7 +696,6 @@ auto get_class_descriptor_900(uintptr_t cls) -> string_t {
 }
 
 auto unwind_900(unwind_callback_t __unwind_callback, void *__unwind_data) -> bool {
-    LOGI("========================= unwind arm 900");
     uintptr_t thread = get_art_thread();
     if ((thread == 0U)) {
         return true;

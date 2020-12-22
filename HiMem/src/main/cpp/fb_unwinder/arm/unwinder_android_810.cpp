@@ -687,7 +687,6 @@ auto get_method_name_810(uintptr_t method) -> string_t {
 }
 
 auto get_class_descriptor_810(uintptr_t cls) -> string_t {
-    LOGI("========================= get_class_descriptor arm 810");
     auto dexfile = get_class_dexfile(cls);
     uint32_t typeidx = Read4(AccessField(cls, 84U));
     uintptr_t typeid_ =
@@ -698,7 +697,6 @@ auto get_class_descriptor_810(uintptr_t cls) -> string_t {
 }
 
 auto unwind_810(unwind_callback_t __unwind_callback, void *__unwind_data) -> bool {
-    LOGI("========================= unwind arm 810");
     uintptr_t thread = get_art_thread();
     if ((thread == 0U)) {
         return true;
@@ -755,7 +753,6 @@ auto unwind_810(unwind_callback_t __unwind_callback, void *__unwind_data) -> boo
             }
         }
         uint32_t link = Read4(AccessField(mstack, 4U));
-        LOGI("link:::>>> %u", link);
         if ((link == 0U)) {
             break;
         }

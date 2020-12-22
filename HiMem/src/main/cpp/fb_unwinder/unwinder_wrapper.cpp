@@ -8,7 +8,10 @@
 #include "unwinder_wrapper.h"
 #include "unwinder_android_900.h"
 #include "unwinder_android_810.h"
-//#include "unwinder_android_800.h"
+#include "unwinder_android_800.h"
+#include "unwinder_android_712.h"
+#include "unwinder_android_711.h"
+#include "unwinder_android_700.h"
 
 #include <sys/system_properties.h>
 #include "../log.h"
@@ -24,6 +27,10 @@ inline bool is_810(const std::string &version) {
 
 inline bool is_800(const std::string &version) {
     return version == "8" || version.rfind("8.0", 0) == 0;
+}
+
+inline bool is_700(const std::string &version) {
+    return version == "7" || version.rfind("7.0", 0) == 0;
 }
 
 std::string get_system_property(const char *key) {
@@ -45,11 +52,15 @@ auto unwind(unwind_callback_t _unwind_callback, void *_unwind_data) -> bool {
             unwind_v = unwind_900;
         } else if (is_810(os_version)) {
             unwind_v = unwind_810;
-        } else if (os_version == "8.0.0") {
+        } else if (is_800(os_version)) {
+            unwind_v = unwind_800;
         } else if (os_version == "7.1.2") {
+            unwind_v = unwind_712;
         } else if (os_version == "7.1.1") {
+            unwind_v = unwind_711;
         } else if (os_version == "7.1.0") {
-        } else if (os_version == "7.0.0") {
+        } else if (is_700(os_version)) {
+//            unwind_v = unwind_700;
         } else if (os_version == "6.0.1") {
         } else if (os_version == "6.0.0") {
         }
@@ -68,11 +79,15 @@ auto get_method_name(uintptr_t method) -> string_t {
             get_method_name_v = get_method_name_900;
         } else if (is_810(os_version)) {
             get_method_name_v = get_method_name_810;
-        } else if (os_version == "8.0.0") {
+        } else if (is_800(os_version)) {
+            get_method_name_v = get_method_name_800;
         } else if (os_version == "7.1.2") {
+            get_method_name_v = get_method_name_712;
         } else if (os_version == "7.1.1") {
+            get_method_name_v = get_method_name_711;
         } else if (os_version == "7.1.0") {
-        } else if (os_version == "7.0.0") {
+        } else if (is_700(os_version)) {
+//            get_method_name_v = get_method_name_700;
         } else if (os_version == "6.0.1") {
         } else if (os_version == "6.0.0") {
         }
@@ -91,11 +106,15 @@ auto get_declaring_class(uintptr_t method) -> uint32_t {
             get_declaring_class_v = get_declaring_class_900;
         } else if (is_810(os_version)) {
             get_declaring_class_v = get_declaring_class_810;
-        } else if (os_version == "8.0.0") {
+        } else if (is_800(os_version)) {
+            get_declaring_class_v = get_declaring_class_800;
         } else if (os_version == "7.1.2") {
+            get_declaring_class_v = get_declaring_class_712;
         } else if (os_version == "7.1.1") {
+            get_declaring_class_v = get_declaring_class_711;
         } else if (os_version == "7.1.0") {
-        } else if (os_version == "7.0.0") {
+        } else if (is_700(os_version)) {
+//            get_declaring_class_v = get_declaring_class_700;
         } else if (os_version == "6.0.1") {
         } else if (os_version == "6.0.0") {
         }
@@ -115,11 +134,15 @@ auto get_class_descriptor(uintptr_t cls) -> string_t {
             get_class_descriptor_v = get_class_descriptor_900;
         } else if (is_810(os_version)) {
             get_class_descriptor_v = get_class_descriptor_810;
-        } else if (os_version == "8.0.0") {
+        } else if (is_800(os_version)) {
+            get_class_descriptor_v = get_class_descriptor_800;
         } else if (os_version == "7.1.2") {
+            get_class_descriptor_v = get_class_descriptor_712;
         } else if (os_version == "7.1.1") {
+            get_class_descriptor_v = get_class_descriptor_711;
         } else if (os_version == "7.1.0") {
-        } else if (os_version == "7.0.0") {
+        } else if (is_700(os_version)) {
+//            get_class_descriptor_v = get_class_descriptor_700;
         } else if (os_version == "6.0.1") {
         } else if (os_version == "6.0.0") {
         }
@@ -139,11 +162,15 @@ auto get_method_trace_id(uintptr_t method) -> uint64_t {
             get_method_trace_id_v = get_method_trace_id_900;
         } else if (is_810(os_version)) {
             get_method_trace_id_v = get_method_trace_id_810;
-        } else if (os_version == "8.0.0") {
+        } else if (is_800(os_version)) {
+            get_method_trace_id_v = get_method_trace_id_800;
         } else if (os_version == "7.1.2") {
+            get_method_trace_id_v = get_method_trace_id_712;
         } else if (os_version == "7.1.1") {
+            get_method_trace_id_v = get_method_trace_id_711;
         } else if (os_version == "7.1.0") {
-        } else if (os_version == "7.0.0") {
+        } else if (is_700(os_version)) {
+//            get_method_trace_id_v = get_method_trace_id_700;
         } else if (os_version == "6.0.1") {
         } else if (os_version == "6.0.0") {
         }

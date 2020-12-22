@@ -40,7 +40,9 @@ void writeLine(char *line, size_t size) {
     }
     static atomic_size_t wroteSize(0);
     int sizeChar = sizeof(char);
+    LOGI("----->fwrite");
     size_t count = fwrite(line, sizeChar, size / sizeChar, dumpFile);
+    LOGI("----->fwrite done");
     wroteSize += count * sizeChar;
     if (wroteSize > FLUSH_THRESHOLD) {
         LOGI("----------wrote: %d", wroteSize.load());

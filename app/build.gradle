@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId "com.mem"
-        minSdkVersion 25
+        minSdkVersion 24
         targetSdkVersion 30
         versionCode 1
         versionName "1.0"
@@ -21,7 +21,7 @@ android {
             }
         }
         ndk {
-            abiFilters "x86", "armeabi-v7a"
+            abiFilters "armeabi-v7a","x86"
         }
     }
 

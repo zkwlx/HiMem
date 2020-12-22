@@ -12,8 +12,11 @@ object HiMemNative {
      * 判断系统是否支持
      */
     fun isOSSupport(): Boolean {
-        // 目前只支持 Android 9.0
+        // 目前只支持 Android 9.0/8.1/8.0/7.1.2/7.1.1
         return Build.VERSION.SDK_INT == 28
+                || Build.VERSION.SDK_INT == 27
+                || Build.VERSION.SDK_INT == 26
+                || Build.VERSION.SDK_INT == 25
     }
 
     /**

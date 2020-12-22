@@ -4,7 +4,7 @@
 #include "../runtime.h"
 
 #include "../../log.h"
-#include "../unwinder_android_800.h"
+#include "../unwinder_android_700.h"
 
 
 struct OatMethod {
@@ -26,11 +26,11 @@ struct ArraySlice {
     uintptr_t size_uintptr;
     uintptr_t element_size_uintptr;
 };
-
 // 内部的方法放到内部命名空间中，避免多个 os_version 定义重复
 namespace {
+
     auto get_runtime_from_thread(uintptr_t thread) {
-        uint32_t jni_env = Read4(AccessField(AccessField(thread, 136U), 28U));
+        uint32_t jni_env = Read4(AccessField(AccessField(thread, 128U), 28U));
         if (jni_env == 0U) {
             return 0U;
         }
@@ -47,7 +47,7 @@ namespace {
     }
 
     auto get_class_dexfile(uintptr_t cls) {
-        uintptr_t dexcache_heap_ref = AccessField(cls, 16U);
+        uintptr_t dexcache_heap_ref = AccessField(cls, 20U);
         uint32_t dexcache_ptr = Read4(AccessField(dexcache_heap_ref, 0U));
         uint32_t dexcache = dexcache_ptr;
         uint64_t dexfile = Read8(AccessField(dexcache, 16U));
@@ -76,7 +76,7 @@ namespace {
     }
 
     auto get_method_shorty(uintptr_t method) {
-        auto cls = get_declaring_class_800(method);
+        auto cls = get_declaring_class_700(method);
         auto dexfile = get_class_dexfile(cls);
         uint32_t dex_method_index = Read4(AccessField(method, 12U));
         uintptr_t method_id =
@@ -84,8 +84,7 @@ namespace {
         uint16_t proto_idx = Read2(AccessField(method_id, 2U));
         uintptr_t method_proto_id =
                 AccessArrayItem(Read4(AccessField(dexfile, 52U)), proto_idx, 12U);
-        uintptr_t shorty_id = AccessField(method_proto_id, 0U);
-        shorty_id = Read4(AccessField(shorty_id, 0U));
+        uint32_t shorty_id = Read4(AccessField(method_proto_id, 0U));
         return get_dexfile_string_by_idx(dexfile, shorty_id);
     }
 
@@ -95,8 +94,7 @@ namespace {
     }
 
     auto get_method_access_flags(uintptr_t method) {
-        uintptr_t access_flags = AccessField(method, 4U);
-        access_flags = Read4(AccessField(access_flags, 0U));
+        uint32_t access_flags = Read4(AccessField(method, 4U));
         return access_flags;
     }
 
@@ -107,8 +105,8 @@ namespace {
     }
 
     auto is_proxy_method(uintptr_t method) {
-        auto declaring_class = get_declaring_class_800(method);
-        uint32_t class_access_flags = Read4(AccessField(declaring_class, 64U));
+        auto declaring_class = get_declaring_class_700(method);
+        uint32_t class_access_flags = Read4(AccessField(declaring_class, 44U));
         uintptr_t kAccClassIsProxy = 262144U;
         if ((class_access_flags & kAccClassIsProxy)) {
             return true;
@@ -151,38 +149,38 @@ namespace {
             uintptr_t entry_point,
             uintptr_t runtime,
             uintptr_t thread) {
-        uint32_t class_linker = Read4(AccessField(runtime, 284U));
-        uintptr_t entry_points = AccessField(AccessField(thread, 128U), 156U);
+        uint32_t class_linker = Read4(AccessField(runtime, 240U));
+        uintptr_t entry_points = AccessField(AccessField(thread, 128U), 144U);
         return (
-                (Read4(AccessField(class_linker, 240U)) == entry_point) ||
-                (Read4(AccessField(entry_points, 376U)) == entry_point));
+                (Read4(AccessField(class_linker, 256U)) == entry_point) ||
+                (Read4(AccessField(entry_points, 380U)) == entry_point));
     }
 
     auto is_quick_to_interpreter_bridge(
             uintptr_t entry_point,
             uintptr_t runtime,
             uintptr_t thread) {
-        uint32_t class_linker = Read4(AccessField(runtime, 284U));
-        uintptr_t entry_points = AccessField(AccessField(thread, 128U), 156U);
+        uint32_t class_linker = Read4(AccessField(runtime, 240U));
+        uintptr_t entry_points = AccessField(AccessField(thread, 128U), 144U);
         return (
-                (Read4(AccessField(class_linker, 252U)) == entry_point) ||
-                (Read4(AccessField(entry_points, 380U)) == entry_point));
+                (Read4(AccessField(class_linker, 268U)) == entry_point) ||
+                (Read4(AccessField(entry_points, 384U)) == entry_point));
     }
 
     auto is_quick_generic_jni_stub(
             uintptr_t entry_point,
             uintptr_t runtime,
             uintptr_t thread) {
-        uint32_t class_linker = Read4(AccessField(runtime, 284U));
-        uintptr_t entry_points = AccessField(AccessField(thread, 128U), 156U);
+        uint32_t class_linker = Read4(AccessField(runtime, 240U));
+        uintptr_t entry_points = AccessField(AccessField(thread, 128U), 144U);
         return (
-                (Read4(AccessField(class_linker, 248U)) == entry_point) ||
-                (Read4(AccessField(entry_points, 204U)) == entry_point));
+                (Read4(AccessField(class_linker, 264U)) == entry_point) ||
+                (Read4(AccessField(entry_points, 208U)) == entry_point));
     }
 
     auto get_quick_entry_point_from_compiled_code(uintptr_t method) {
         uintptr_t ptr_fields = AccessField(method, 20U);
-        uint32_t entry_point = Read4(AccessField(ptr_fields, 8U));
+        uint32_t entry_point = Read4(AccessField(ptr_fields, 12U));
         entry_point = entry_point;
         return entry_point;
     }
@@ -190,29 +188,27 @@ namespace {
     auto get_oat_method_header_from_entry_point(uintptr_t entry_point) {
         entry_point = entry_point;
         entry_point = (entry_point & (~1U));
-        uintptr_t header_offset = 24U;
+        uintptr_t header_offset = 20U;
         uintptr_t oat_method_header = (entry_point - header_offset);
         return oat_method_header;
     }
 
     auto get_quick_frame_info_from_entry_point(uintptr_t entry_point) {
         auto oat_method_header = get_oat_method_header_from_entry_point(entry_point);
-        return AccessField(oat_method_header, 8U);
+        return AccessField(oat_method_header, 4U);
     }
 
     auto method_header_contains(uintptr_t method_header, uintptr_t pc) {
-        uintptr_t code = AccessField(method_header, 24U);
-        uint32_t code_size = Read4(AccessField(method_header, 20U));
-        uintptr_t kCodeSizeMask = (~2147483648U);
-        code_size = (code_size & kCodeSizeMask);
+        uintptr_t code = AccessField(method_header, 20U);
+        uint32_t code_size = Read4(AccessField(method_header, 16U));
         return ((code <= pc) && (pc <= (code + code_size)));
     }
 
     auto is_resolved(uintptr_t cls) {
-        uintptr_t status = AccessField(cls, 112U);
+        uintptr_t status = AccessField(cls, 120U);
         uintptr_t kStatusResolved = 4U;
         intptr_t kStatusErrorResolved = (-2U);
-        return ((status >= 4U) || (status == kStatusErrorResolved));
+        return (status >= kStatusResolved);
     }
 
     auto get_oat_class(uintptr_t oat_dex_file, uintptr_t class_def_idx) {
@@ -221,7 +217,7 @@ namespace {
                 AdvancePointer(oat_class_offsets_pointer, (class_def_idx * 4U));
         oat_class_offset = Read4(oat_class_offset);
         uint32_t oat_file = Read4(AccessField(oat_dex_file, 0U));
-        uint32_t oat_file_begin = Read4(AccessField(oat_file, 20U));
+        uint32_t oat_file_begin = Read4(AccessField(oat_file, 16U));
         uintptr_t oat_class_pointer =
                 AdvancePointer(oat_file_begin, (oat_class_offset * 1U));
 
@@ -264,10 +260,10 @@ namespace {
 
     auto find_oat_class(uintptr_t cls) {
         auto dex_file = get_class_dexfile(cls);
-        uint32_t class_def_idx = Read4(AccessField(cls, 80U));
+        uint32_t class_def_idx = Read4(AccessField(cls, 92U));
         uintptr_t kDexNoIndex16 = 65535U;
 
-        uint32_t oat_dex_file = Read4(AccessField(dex_file, 76U));
+        uint32_t oat_dex_file = Read4(AccessField(dex_file, 60U));
         if (((oat_dex_file == 0U) || (Read4(AccessField(oat_dex_file, 0U)) == 0U))) {
             return OatClass{
                     .oat_file_uintptr = 0,
@@ -348,9 +344,9 @@ namespace {
 
     auto runtime_is_aot_compiler(uintptr_t runtime, uintptr_t instance) {
         uint32_t jit =
-                Read4(AccessField(AccessField(AccessField(runtime, 308U), 0U), 0U));
-        bool use_jit_compilation = ((jit != 0U) && Read1(AccessField(jit, 268U)));
-        uint32_t compiler_callbacks = Read4(AccessField(runtime, 108U));
+                Read4(AccessField(AccessField(AccessField(runtime, 264U), 0U), 0U));
+        bool use_jit_compilation = ((jit != 0U) && Read1(AccessField(jit, 252U)));
+        uint32_t compiler_callbacks = Read4(AccessField(runtime, 88U));
         return ((!use_jit_compilation) && (compiler_callbacks != 0U));
     }
 
@@ -370,10 +366,10 @@ namespace {
         uintptr_t runtime_current = get_runtime();
         uintptr_t begin_uintptr = 0U;
         uintptr_t oat_file = struct_OatClass.oat_file_uintptr;
-        if ((Read1(AccessField(oat_file, 40U)) ||
+        if ((Read1(AccessField(oat_file, 32U)) ||
              ((runtime_current == 0U) ||
               runtime_is_aot_compiler(runtime_current, runtime_current)))) {
-            begin_uintptr = Read4(AccessField(oat_file, 20U));
+            begin_uintptr = Read4(AccessField(oat_file, 16U));
             uint32_t offset_uintptr = Read4(AccessField(oat_method_offsets, 0U));
             return OatMethod{
                     .begin_uintptr = begin_uintptr,
@@ -381,7 +377,7 @@ namespace {
                     .success_b = true,
             };
         }
-        begin_uintptr = Read4(AccessField(oat_file, 20U));
+        begin_uintptr = Read4(AccessField(oat_file, 16U));
         return OatMethod{
                 .begin_uintptr = begin_uintptr,
                 .offset_uintptr = 0,
@@ -415,7 +411,7 @@ namespace {
             uintptr_t start_offset) {
         uintptr_t ptr_size = 4U;
         uintptr_t num_methods = 0U;
-        uint64_t methods_ptr = Read8(AccessField(cls, 48U));
+        uint64_t methods_ptr = Read8(AccessField(cls, 64U));
         if ((methods_ptr == 0U)) {
             num_methods = 0U;
         } else {
@@ -434,8 +430,15 @@ namespace {
 
         uintptr_t method_size = 20U;
         method_size = round_up(method_size, ptr_size);
-        method_size = (method_size + 12U);
+        method_size = (method_size + 16U);
         uintptr_t method_alignment = ptr_size;
+        auto array_uintptr = length_prefixed_array_at(
+                methods_ptr, start_offset, method_size, method_alignment);
+        return ArraySlice{
+                .array_uintptr = array_uintptr,
+                .size_uintptr = size,
+                .element_size_uintptr = method_size,
+        };
         auto array_method =
                 length_prefixed_array_at(methods_ptr, 0U, method_size, method_alignment);
         uint32_t size_uintptr = Read4(AccessField(methods_ptr, 0U));
@@ -456,11 +459,11 @@ namespace {
 
     auto find_oat_method_for(uintptr_t method, uintptr_t runtime_obj) {
         uintptr_t oat_method_index = 0U;
-        auto cls = get_declaring_class_800(method);
+        auto cls = get_declaring_class_700(method);
         if ((is_static_method(method) || is_direct_method(method))) {
             oat_method_index = Read2(AccessField(method, 16U));
         } else {
-            oat_method_index = Read2(AccessField(cls, 118U));
+            oat_method_index = Read2(AccessField(cls, 126U));
             auto virtual_methods = get_virtual_methods(method, cls, oat_method_index);
             uintptr_t iterator = virtual_methods.array_uintptr;
             uintptr_t end =
@@ -506,11 +509,10 @@ namespace {
         if ((code == 0U)) {
             return 0U;
         }
-        uintptr_t method_header_size = 24U;
+        uintptr_t method_header_size = 20U;
         code = (code - method_header_size);
         uintptr_t kCodeSizeMask = (~2147483648U);
-        uint32_t code_size = Read4(AccessField(code, 20U));
-        code_size = (code_size & kCodeSizeMask);
+        uint32_t code_size = Read4(AccessField(code, 16U));
         if ((code_size == 0U)) {
             return 0U;
         }
@@ -585,11 +587,11 @@ namespace {
         auto oat_quick_method_header =
                 get_oat_quick_method_header(method, runtime_obj, thread_obj, pc);
         if ((oat_quick_method_header != 0U)) {
-            return Read4(AccessField(AccessField(oat_quick_method_header, 8U), 0U));
+            return Read4(AccessField(AccessField(oat_quick_method_header, 4U), 0U));
         }
         uint32_t size = 0U;
         uintptr_t callee_save_methods = AccessField(runtime_obj, 0U);
-        uintptr_t callee_save_infos = AccessField(runtime_obj, 60U);
+        uintptr_t callee_save_infos = AccessField(runtime_obj, 52U);
         uintptr_t kSaveAll = 0U;
         uintptr_t kRefsOnly = 1U;
         uintptr_t kRefsAndArgs = 2U;
@@ -654,10 +656,9 @@ namespace {
         size = Read4(AccessField(frame_info, 0U));
         return size;
     }
-
 }
 
-auto get_declaring_class_800(uintptr_t method) -> uint32_t {
+auto get_declaring_class_700(uintptr_t method) -> uint32_t {
     uintptr_t declaring_class_gc_root = AccessField(method, 0U);
     uintptr_t declaring_class_ref = AccessField(declaring_class_gc_root, 0U);
     uint32_t declaring_class_ptr = Read4(AccessField(declaring_class_ref, 0U));
@@ -665,8 +666,8 @@ auto get_declaring_class_800(uintptr_t method) -> uint32_t {
     return declaring_class;
 }
 
-auto get_method_trace_id_800(uintptr_t method) -> uint64_t {
-    auto cls = get_declaring_class_800(method);
+auto get_method_trace_id_700(uintptr_t method) -> uint64_t {
+    auto cls = get_declaring_class_700(method);
     auto dexfile = get_class_dexfile(cls);
     uintptr_t signature = AccessField(Read4(AccessField(dexfile, 32U)), 12U);
     uint32_t dex_id = Read4(signature);
@@ -675,29 +676,27 @@ auto get_method_trace_id_800(uintptr_t method) -> uint64_t {
     return GetMethodTraceId(dex_id, method_id);
 }
 
-auto get_method_name_800(uintptr_t method) -> string_t {
-    auto cls = get_declaring_class_800(method);
+auto get_method_name_700(uintptr_t method) -> string_t {
+    auto cls = get_declaring_class_700(method);
     auto dexfile = get_class_dexfile(cls);
     uint32_t dex_method_index = Read4(AccessField(method, 12U));
     uintptr_t method_id =
             AccessArrayItem(Read4(AccessField(dexfile, 48U)), dex_method_index, 8U);
-    uintptr_t name_idx = AccessField(method_id, 4U);
-    name_idx = Read4(AccessField(name_idx, 0U));
+    uint32_t name_idx = Read4(AccessField(method_id, 4U));
     return get_dexfile_string_by_idx(dexfile, name_idx);
 }
 
-auto get_class_descriptor_800(uintptr_t cls) -> string_t {
+auto get_class_descriptor_700(uintptr_t cls) -> string_t {
     auto dexfile = get_class_dexfile(cls);
-    uint32_t typeidx = Read4(AccessField(cls, 84U));
+    uint32_t typeidx = Read4(AccessField(cls, 96U));
     uintptr_t typeid_ =
             AccessArrayItem(Read4(AccessField(dexfile, 40U)), typeidx, 4U);
-    uintptr_t descriptor_idx = AccessField(typeid_, 0U);
-    descriptor_idx = Read4(AccessField(descriptor_idx, 0U));
+    uint32_t descriptor_idx = Read4(AccessField(typeid_, 0U));
     return get_dexfile_string_by_idx(dexfile, descriptor_idx);
 }
 
-auto unwind_800(unwind_callback_t __unwind_callback, void *__unwind_data) -> bool {
-    LOGI("========================= unwind arm 800");
+auto unwind_700(unwind_callback_t __unwind_callback, void *__unwind_data) -> bool {
+    LOGI("========================= unwind x86 700");
     uintptr_t thread = get_art_thread();
     if ((thread == 0U)) {
         return true;
@@ -708,7 +707,7 @@ auto unwind_800(unwind_callback_t __unwind_callback, void *__unwind_data) -> boo
     uintptr_t tls = AccessField(thread_obj, 128U);
     uintptr_t mstack = AccessField(tls, 12U);
     uint32_t generic_jni_trampoline =
-            Read4(AccessField(AccessField(tls, 156U), 204U));
+            Read4(AccessField(AccessField(tls, 144U), 208U));
     while ((mstack != 0U)) {
         uint32_t quick_frame = Read4(AccessField(mstack, 0U));
         quick_frame = quick_frame;

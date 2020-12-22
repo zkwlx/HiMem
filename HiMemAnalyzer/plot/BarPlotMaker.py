@@ -209,11 +209,14 @@ class BarPlotMaker(BaseMaker):
         :return:
         """
         result = ""
+        if stack == "":
+            return result
+
         try:
             i = stack.index("\n")
             result = stack[0:i]
         except ValueError:
-            print(stack)
+            print("getStackFirstLine error: %s" % stack)
         return result
 
     def aggItemGrowth(self, aggItem: AggEvent, event: Event):

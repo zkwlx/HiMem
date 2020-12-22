@@ -4,7 +4,7 @@
 #include "../runtime.h"
 
 #include "../../log.h"
-#include "../unwinder_android_810.h"
+#include "../unwinder_android_800.h"
 
 
 struct OatMethod {
@@ -31,7 +31,7 @@ struct ArraySlice {
 namespace {
 
     auto get_runtime_from_thread(uintptr_t thread) {
-        uint32_t jni_env = Read4(AccessField(AccessField(thread, 136U), 28U));
+        uint32_t jni_env = Read4(AccessField(AccessField(thread, 128U), 28U));
         if (jni_env == 0U) {
             return 0U;
         }
@@ -77,7 +77,7 @@ namespace {
     }
 
     auto get_method_shorty(uintptr_t method) {
-        auto cls = get_declaring_class_810(method);
+        auto cls = get_declaring_class_800(method);
         auto dexfile = get_class_dexfile(cls);
         uint32_t dex_method_index = Read4(AccessField(method, 12U));
         uintptr_t method_id =
@@ -108,7 +108,7 @@ namespace {
     }
 
     auto is_proxy_method(uintptr_t method) {
-        auto declaring_class = get_declaring_class_810(method);
+        auto declaring_class = get_declaring_class_800(method);
         uint32_t class_access_flags = Read4(AccessField(declaring_class, 64U));
         uintptr_t kAccClassIsProxy = 262144U;
         if ((class_access_flags & kAccClassIsProxy)) {
@@ -153,9 +153,9 @@ namespace {
             uintptr_t runtime,
             uintptr_t thread) {
         uint32_t class_linker = Read4(AccessField(runtime, 284U));
-        uintptr_t entry_points = AccessField(AccessField(thread, 136U), 156U);
+        uintptr_t entry_points = AccessField(AccessField(thread, 128U), 156U);
         return (
-                (Read4(AccessField(class_linker, 168U)) == entry_point) ||
+                (Read4(AccessField(class_linker, 240U)) == entry_point) ||
                 (Read4(AccessField(entry_points, 376U)) == entry_point));
     }
 
@@ -164,9 +164,9 @@ namespace {
             uintptr_t runtime,
             uintptr_t thread) {
         uint32_t class_linker = Read4(AccessField(runtime, 284U));
-        uintptr_t entry_points = AccessField(AccessField(thread, 136U), 156U);
+        uintptr_t entry_points = AccessField(AccessField(thread, 128U), 156U);
         return (
-                (Read4(AccessField(class_linker, 180U)) == entry_point) ||
+                (Read4(AccessField(class_linker, 252U)) == entry_point) ||
                 (Read4(AccessField(entry_points, 380U)) == entry_point));
     }
 
@@ -175,9 +175,9 @@ namespace {
             uintptr_t runtime,
             uintptr_t thread) {
         uint32_t class_linker = Read4(AccessField(runtime, 284U));
-        uintptr_t entry_points = AccessField(AccessField(thread, 136U), 156U);
+        uintptr_t entry_points = AccessField(AccessField(thread, 128U), 156U);
         return (
-                (Read4(AccessField(class_linker, 176U)) == entry_point) ||
+                (Read4(AccessField(class_linker, 248U)) == entry_point) ||
                 (Read4(AccessField(entry_points, 204U)) == entry_point));
     }
 
@@ -217,7 +217,7 @@ namespace {
     }
 
     auto get_oat_class(uintptr_t oat_dex_file, uintptr_t class_def_idx) {
-        uint32_t oat_class_offsets_pointer = Read4(AccessField(oat_dex_file, 44U));
+        uint32_t oat_class_offsets_pointer = Read4(AccessField(oat_dex_file, 40U));
         uintptr_t oat_class_offset =
                 AdvancePointer(oat_class_offsets_pointer, (class_def_idx * 4U));
         oat_class_offset = Read4(oat_class_offset);
@@ -349,7 +349,7 @@ namespace {
 
     auto runtime_is_aot_compiler(uintptr_t runtime, uintptr_t instance) {
         uint32_t jit =
-                Read4(AccessField(AccessField(AccessField(runtime, 312U), 0U), 0U));
+                Read4(AccessField(AccessField(AccessField(runtime, 308U), 0U), 0U));
         bool use_jit_compilation = ((jit != 0U) && Read1(AccessField(jit, 252U)));
         uint32_t compiler_callbacks = Read4(AccessField(runtime, 108U));
         return ((!use_jit_compilation) && (compiler_callbacks != 0U));
@@ -371,7 +371,7 @@ namespace {
         uintptr_t runtime_current = get_runtime();
         uintptr_t begin_uintptr = 0U;
         uintptr_t oat_file = struct_OatClass.oat_file_uintptr;
-        if ((Read1(AccessField(oat_file, 44U)) ||
+        if ((Read1(AccessField(oat_file, 40U)) ||
              ((runtime_current == 0U) ||
               runtime_is_aot_compiler(runtime_current, runtime_current)))) {
             begin_uintptr = Read4(AccessField(oat_file, 20U));
@@ -457,7 +457,7 @@ namespace {
 
     auto find_oat_method_for(uintptr_t method, uintptr_t runtime_obj) {
         uintptr_t oat_method_index = 0U;
-        auto cls = get_declaring_class_810(method);
+        auto cls = get_declaring_class_800(method);
         if ((is_static_method(method) || is_direct_method(method))) {
             oat_method_index = Read2(AccessField(method, 16U));
         } else {
@@ -503,17 +503,17 @@ namespace {
     auto get_code_offset(struct OatMethod const &struct_OatMethod) {
         uintptr_t oat_method_offset = struct_OatMethod.offset_uintptr;
         auto code = get_oat_pointer(struct_OatMethod, oat_method_offset);
-        code = (code & (~1UL));
-        if ((code == 0UL)) {
-            return 0UL;
+        code = (code & (~1U));
+        if ((code == 0U)) {
+            return 0U;
         }
-        uintptr_t method_header_size = 24UL;
+        uintptr_t method_header_size = 24U;
         code = (code - method_header_size);
-        uintptr_t kCodeSizeMask = (~2147483648UL);
-        uint32_t code_size = Read4(AccessField(code, 20UL));
+        uintptr_t kCodeSizeMask = (~2147483648U);
+        uint32_t code_size = Read4(AccessField(code, 20U));
         code_size = (code_size & kCodeSizeMask);
-        if ((code_size == 0UL)) {
-            return 0UL;
+        if ((code_size == 0U)) {
+            return 0U;
         }
         return oat_method_offset;
     }
@@ -530,13 +530,13 @@ namespace {
             uintptr_t thread_obj,
             uintptr_t pc) {
         if (is_runtime_method(method)) {
-            return 0UL;
+            return 0U;
         }
         auto existing_entry_point = get_quick_entry_point_from_compiled_code(method);
 
         if (is_quick_generic_jni_stub(
                 existing_entry_point, runtime_obj, thread_obj)) {
-            return 0UL;
+            return 0U;
         }
         uintptr_t method_header = 0U;
         if (((!is_quick_generic_jni_stub(
@@ -555,13 +555,13 @@ namespace {
         if ((!oat_method.success_b)) {
             if (is_quick_resolution_stub(
                     existing_entry_point, runtime_obj, thread_obj)) {
-                return 0UL;
+                return 0U;
             }
         }
         auto oat_entry_point = get_quick_code(oat_method);
         if (((oat_entry_point == 0U) ||
              is_quick_generic_jni_stub(oat_entry_point, runtime_obj, thread_obj))) {
-            return 0UL;
+            return 0U;
         }
         oat_entry_point = oat_entry_point;
         method_header = get_oat_method_header_from_entry_point(oat_entry_point);
@@ -655,9 +655,11 @@ namespace {
         size = Read4(AccessField(frame_info, 0U));
         return size;
     }
+
+
 }
 
-auto get_declaring_class_810(uintptr_t method) -> uint32_t {
+auto get_declaring_class_800(uintptr_t method) -> uint32_t {
     uintptr_t declaring_class_gc_root = AccessField(method, 0U);
     uintptr_t declaring_class_ref = AccessField(declaring_class_gc_root, 0U);
     uint32_t declaring_class_ptr = Read4(AccessField(declaring_class_ref, 0U));
@@ -665,8 +667,8 @@ auto get_declaring_class_810(uintptr_t method) -> uint32_t {
     return declaring_class;
 }
 
-auto get_method_trace_id_810(uintptr_t method) -> uint64_t {
-    auto cls = get_declaring_class_810(method);
+auto get_method_trace_id_800(uintptr_t method) -> uint64_t {
+    auto cls = get_declaring_class_800(method);
     auto dexfile = get_class_dexfile(cls);
     uintptr_t signature = AccessField(Read4(AccessField(dexfile, 32U)), 12U);
     uint32_t dex_id = Read4(signature);
@@ -675,8 +677,8 @@ auto get_method_trace_id_810(uintptr_t method) -> uint64_t {
     return GetMethodTraceId(dex_id, method_id);
 }
 
-auto get_method_name_810(uintptr_t method) -> string_t {
-    auto cls = get_declaring_class_810(method);
+auto get_method_name_800(uintptr_t method) -> string_t {
+    auto cls = get_declaring_class_800(method);
     auto dexfile = get_class_dexfile(cls);
     uint32_t dex_method_index = Read4(AccessField(method, 12U));
     uintptr_t method_id =
@@ -686,7 +688,7 @@ auto get_method_name_810(uintptr_t method) -> string_t {
     return get_dexfile_string_by_idx(dexfile, name_idx);
 }
 
-auto get_class_descriptor_810(uintptr_t cls) -> string_t {
+auto get_class_descriptor_800(uintptr_t cls) -> string_t {
     auto dexfile = get_class_dexfile(cls);
     uint32_t typeidx = Read4(AccessField(cls, 84U));
     uintptr_t typeid_ =
@@ -696,8 +698,8 @@ auto get_class_descriptor_810(uintptr_t cls) -> string_t {
     return get_dexfile_string_by_idx(dexfile, descriptor_idx);
 }
 
-auto unwind_810(unwind_callback_t __unwind_callback, void *__unwind_data) -> bool {
-    LOGI("========================= unwind x86-64 810");
+auto unwind_800(unwind_callback_t __unwind_callback, void *__unwind_data) -> bool {
+    LOGI("========================= unwind x86 800");
     uintptr_t thread = get_art_thread();
     if ((thread == 0U)) {
         return true;
@@ -705,7 +707,7 @@ auto unwind_810(unwind_callback_t __unwind_callback, void *__unwind_data) -> boo
     auto runtime = get_runtime_from_thread(thread);
     uintptr_t thread_obj = thread;
     auto runtime_obj = runtime;
-    uintptr_t tls = AccessField(thread_obj, 136U);
+    uintptr_t tls = AccessField(thread_obj, 128U);
     uintptr_t mstack = AccessField(tls, 12U);
     uint32_t generic_jni_trampoline =
             Read4(AccessField(AccessField(tls, 156U), 204U));

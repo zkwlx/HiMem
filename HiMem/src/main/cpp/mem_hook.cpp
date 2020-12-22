@@ -53,7 +53,7 @@ int my_munmap(void *addr, size_t length) {
 }
 
 static pthread_attr_t *getAttrFromInternal() {
-    // Android 9.0/8.1.0 结构一致
+    // Android 9.0/8.1/8.0/7.1.2/7.1.1/7.0 结构一致
     //TODO 添加其他版本支持时需要适配，模拟的结构参考 class_layout.h 文件
     void *pthread_internal = __get_tls()[1];
     auto sp = (uintptr_t) pthread_internal;

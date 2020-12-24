@@ -75,10 +75,69 @@ bool obtainStack(std::string &stack) {
         }
     } else {// jump
         LOGI("SIGSEGV!! skip obtainStack() !!");
-        stack.append("stack unwind error").append(STACK_ELEMENT_DIV);
         result = false;
     }
     canJump = false;
     return result;
 
+}
+
+//=============================== native stack ====================================
+#include <unwind.h>
+#include <dlfcn.h>
+#include <cinttypes>
+
+
+struct backtrace_state_t {
+    void **current;
+    void **end;
+};
+
+// 栈起始的偏移量
+#define STACK_OFFSET 4
+// 栈从偏移处开始的行数
+#define STACK_SIZE 5
+
+static __thread int lineCount;
+
+static _Unwind_Reason_Code unwind_callback(struct _Unwind_Context *context, void *arg) {
+    lineCount++;
+    if (lineCount > (STACK_OFFSET + STACK_SIZE)) {
+        // 暂时只保留 5 行栈信息
+        return _URC_NORMAL_STOP;
+    }
+    if (lineCount > STACK_OFFSET) {
+        // 从栈的第 5 行开始解析，跳过前 4 行（因为是 himem 内部调用栈）
+        auto *state = (backtrace_state_t *) arg;
+        _Unwind_Word pc = _Unwind_GetIP(context);
+        if (pc) {
+            if (state->current == state->end) {
+                return _URC_END_OF_STACK;
+            } else {
+                *state->current++ = (void *) pc;
+            }
+        }
+    }
+    return _URC_NO_REASON;
+}
+
+static size_t capture_backtrace(void **buffer, size_t max) {
+    lineCount = 0;
+    backtrace_state_t state = {buffer, buffer + max};
+    _Unwind_Backtrace(unwind_callback, &state);
+    return state.current - buffer;
+}
+
+void obtainNativeStack(std::string &stack) {
+    void *buffer[STACK_SIZE];
+    int frames_size = capture_backtrace(buffer, STACK_SIZE);
+    for (int i = 0; i < frames_size; i++) {
+        Dl_info info;
+        const void *addr = buffer[i];
+        if (dladdr(addr, &info) && info.dli_fname) {
+            stack.append(info.dli_fname).append("(");
+            std::string func_name = info.dli_sname == nullptr ? "None" : info.dli_sname;
+            stack.append(func_name).append(")").append(STACK_ELEMENT_DIV);
+        }
+    }
 }

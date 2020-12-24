@@ -23,4 +23,6 @@ struct unwinder_data {
 
 bool obtainStack(std::string &stack);
 
+void obtainNativeStack(std::string &stack);
+
 #endif //MEMORY_MEM_STACK_H

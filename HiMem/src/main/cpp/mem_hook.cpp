@@ -70,12 +70,43 @@ void my_pthread_exit(void *return_value) {
     pthread_exit(return_value);
 }
 
+void *my_malloc(size_t size) {
+    void *result = malloc(size);
+//    LOGI("malloc----->>>size:%d, address:%p", size, result);
+    return result;
+}
+
+void *my_calloc(size_t count, size_t size) {
+    void *result = calloc(count, size);
+//    LOGI("calloc----->>>size:%d, count:%d, address:%p", size, count, result);
+    return result;
+}
+
+void *my_realloc(void *ptr, size_t size) {
+    void *result = realloc(ptr, size);
+//    LOGI("realloc----->>>size:%d, address:%p", size, result);
+    return result;
+}
+
+void my_free(void *ptr) {
+//    LOGI("free----->>> address:%p", ptr);
+    free(ptr);
+}
+
 void do_hook() {
     //追踪某些调用 (忽略 linker 和 linker64)
     xhook_register(".*\\.so$", "mmap", (void *) my_mmap, nullptr);
     xhook_register(".*\\.so$", "mmap64", (void *) my_mmap64, nullptr);
     xhook_register(".*\\.so$", "munmap", (void *) my_munmap, nullptr);
+//    xhook_register(".*\\.so$", "malloc", (void *) my_malloc, nullptr);
+//    xhook_register(".*\\.so$", "calloc", (void *) my_calloc, nullptr);
+//    xhook_register(".*\\.so$", "realloc", (void *) my_realloc, nullptr);
+//    xhook_register(".*\\.so$", "free", (void *) my_free, nullptr);
     xhook_register(".*/libc.so$", "pthread_exit", (void *) my_pthread_exit, nullptr);
+//    xhook_ignore(".*/libc.so$", "free");
+//    xhook_ignore(".*/libc.so$", "malloc");
+//    xhook_ignore(".*/libc.so$", "calloc");
+//    xhook_ignore(".*/libc.so$", "realloc");
     xhook_ignore(".*/linker$", "mmap");
     xhook_ignore(".*/linker$", "mmap64");
     xhook_ignore(".*/linker$", "munmap");

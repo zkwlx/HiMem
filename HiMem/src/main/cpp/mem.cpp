@@ -144,9 +144,14 @@ static void onMmap(void *addr, size_t length, int prot, int flags, int fd, off_t
         // 对同一个地址多次 mmap(可能因为 hook 过多导致)，跳过
         return;
     }
-    // 尝试获取 JVM 堆栈
+    // 尝试获取 JVM/Native 堆栈
     string stack;
-    obtainStack(stack);
+    if (!obtainStack(stack) || stack.empty())
+        obtainNativeStack(stack);
+
+    if (stack.empty())
+        stack.append("stack unwind error").append(STACK_ELEMENT_DIV);
+
     // fd 解析为映射的文件 path
     string fdLink = fdToLink(fd);
 

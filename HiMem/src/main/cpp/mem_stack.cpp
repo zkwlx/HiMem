@@ -96,7 +96,7 @@ struct backtrace_state_t {
 // 栈起始的偏移量
 #define STACK_OFFSET 4
 // 栈从偏移处开始的行数
-#define STACK_SIZE 5
+#define STACK_SIZE 15
 
 static __thread int lineCount;
 
@@ -107,7 +107,7 @@ static _Unwind_Reason_Code unwind_callback(struct _Unwind_Context *context, void
         return _URC_NORMAL_STOP;
     }
     if (lineCount > STACK_OFFSET) {
-        // 从栈的第 5 行开始解析，跳过前 4 行（因为是 himem 内部调用栈）
+        // 从栈的第 STACK_OFFSET+1 行开始解析，跳过前 STACK_OFFSET 行（因为是 himem 内部调用栈）
         auto *state = (backtrace_state_t *) arg;
         _Unwind_Word pc = _Unwind_GetIP(context);
         if (pc) {

@@ -2,11 +2,22 @@
 // Created by zkw on 20-11-16.
 //
 
-#ifndef MEMORY_MMAP_TRACER_H
-#define MEMORY_MMAP_TRACER_H
+#ifndef MEMORY_MEM_TRACER_H
+#define MEMORY_MEM_TRACER_H
 
 #include <unistd.h>
 #include <string>
+
+
+struct malloc_info {
+    uintptr_t address;
+    size_t length;
+    std::string stack;
+};
+
+struct free_info {
+    uintptr_t address;
+};
 
 struct mmap_info {
     uintptr_t address;
@@ -24,6 +35,8 @@ struct munmap_info {
     size_t length;
 };
 
+extern uint FLUSH_THRESHOLD;
+
 void tracerStart(char *dumpDir);
 
 void tracerDestroy();
@@ -34,6 +47,10 @@ void postOnMmap(mmap_info *data);
 
 void postOnMunmap(munmap_info *data);
 
+void postOnMalloc(malloc_info *data);
+
+void postOnFree(free_info *data);
+
 void flushToFile();
 
-#endif //MEMORY_MMAP_TRACER_H
+#endif //MEMORY_MEM_TRACER_H

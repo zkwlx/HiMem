@@ -2,7 +2,7 @@
 // Created by zkw on 20-11-16.
 //
 
-#include "mmap_tracer.h"
+#include "mem_tracer.h"
 #include <cerrno>
 #include <cinttypes>
 
@@ -25,6 +25,7 @@ extern "C" {
 using namespace std;
 
 FILE *dumpFile = nullptr;
+// 默认 3KB
 uint FLUSH_THRESHOLD = 3 * 1024;
 
 int modeFlag = MODE_LOG;
@@ -103,6 +104,20 @@ void postOnMmap(mmap_info *data) {
 
 void postOnMunmap(munmap_info *data) {
     munmapForModeLog(data);
+}
+
+void postOnMalloc(malloc_info *data) {
+    // 样例：alloc[]0xee6891[]104800[]java/lang/String.get|com/zhihu/A.mmm|xxx
+    string content = "alloc[]" + to_string(data->address)
+                     + "[]" + to_string(data->length)
+                     + "[]" + data->stack;
+    writeLine((char *) content.c_str(), content.size());
+}
+
+void postOnFree(free_info *data) {
+    // 样例：free[]0xee6891
+    string content = "free[]" + to_string(data->address) + "\n";
+    writeLine((char *) content.c_str(), content.size());
 }
 
 void flushToFile() {

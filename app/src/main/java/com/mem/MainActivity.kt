@@ -17,13 +17,12 @@ class MainActivity : AppCompatActivity() {
             Thread.UncaughtExceptionHandler { thread, exception ->
                 Log.e("zkw", "FATAL Crash :$exception")
             }
+        MemTest.initNative()
 
     }
 
 
     fun onButtonClick(view: View) {
-//        MemTest.stringFromJNI()
-        MemTest.initNative()
 //        File(externalCacheDir, "pmapBefore.txt").writeText(ProcUtils.getPmap())
         repeat(5) {
             Log.i("zkw", "------> $it")

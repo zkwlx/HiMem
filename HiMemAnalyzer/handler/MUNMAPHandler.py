@@ -16,6 +16,8 @@ class MUNMAPHandler(BaseHandler):
         self.uniqueEvents = []
 
     def handle(self, segmentList) -> Optional[Event]:
+        if len(segmentList) < 3:
+            return None
         if segmentList[0] != "munmap":
             return None
         event = Event()

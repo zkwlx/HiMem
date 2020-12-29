@@ -51,35 +51,20 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 }
 
-//TODO maven zhihu ========
+// maven local ======
 apply plugin: 'maven'
-group = 'com.zhihu.android.library'
-archivesBaseName = 'himem'
-version = "0.1.1"
+group = "zhihu.himem"
+archivesBaseName = "himem"
+version = '1.0.0'
 uploadArchives {
+    doFirst {
+        System.out.println("============uploadArchives for local: $version")
+    }
     repositories {
         mavenDeployer {
-            repository(url: "http://android-maven.dev.zhihu.com/repository/maven-releases/") {
-                authentication(userName: "android-deployment", password: "android-dev-123")
-            }
+            repository(url: mavenLocal().url)
         }
     }
+    finalizedBy(clean)
 }
-
-//TODO maven local ======
-//apply plugin: 'maven'
-//group = "zhihu.himem"
-//archivesBaseName = "himem"
-//version = '10.0.0-SNAPSHOT'
-//uploadArchives {
-//    doFirst {
-//        System.out.println("============uploadArchives for local: $version")
-//    }
-//    repositories {
-//        mavenDeployer {
-//            repository(url: mavenLocal().url)
-//        }
-//    }
-//    finalizedBy(clean)
-//}
 // maven local =======

@@ -34,7 +34,17 @@ class AggEvent:
 
     def __eq__(self, other):
         # 先判断堆栈是否一致，再判断掩码是否完全一致，掩码由（length, protect, flag）组成
-        return self.mask == other.mask and self.isSameStack(other)
+        return self.isSameMask(other) and self.isSameStack(other)
+
+    def isSameMask(self, other):
+        if self.expand:
+            # 展开模式，需要掩码（length, protect, flag）完全相同
+            return self.mask == other.mask
+        else:
+            # 非展开模式，只匹配 protect 和 flag
+            return len(self.mask) == len(other.mask) \
+                   and self.mask[1] == other.mask[1] \
+                   and self.mask[2] == other.mask[2]
 
     def isSameStack(self, other) -> bool:
         if self.stack == "" and other.stack == "":

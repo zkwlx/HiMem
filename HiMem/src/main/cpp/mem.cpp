@@ -1,33 +1,17 @@
 #include <jni.h>
-#include <string>
-#include <sys/mman.h>
-#include <cerrno>
 #include <csignal>
 #include <csetjmp>
 #include "log.h"
 
-#include <set>
-
 #include "mem_hook.h"
-#include "mem.h"
-#include "fb_unwinder/runtime.h"
-#include "mmap_tracer.h"
+#include "mem_tracer.h"
 #include "mem_stack.h"
-
-extern "C" {
-#include "log.h"
-}
+#include "mem_callback.h"
 
 using namespace std;
 
 JavaVM *g_vm = nullptr;
 jobject g_obj = nullptr;
-
-// 默认 1MB
-static uint SIZE_THRESHOLD = 1040384;
-
-// 用于 mmap/munmap 去重（处于性能考虑不加锁，而是用线程私有数据，可能有失严谨，无关紧要）
-thread_local set<uintptr_t> addressSet;
 
 void setEnv(JNIEnv *env, jobject obj) {
     // 保存全局 vm 引用，以便在子线程中使用
@@ -64,8 +48,6 @@ static void initSigaction() {
         LOGE("sigaction SIGSEGV failed!");
     }
 }
-
-extern uint FLUSH_THRESHOLD;
 
 void
 init(JNIEnv *env, jobject thiz, jstring dumpDir, jlong mmapSizeThreshold, jlong flushThreshold) {
@@ -116,81 +98,6 @@ void forTestClassLayout() {
 
 void memFlush(JNIEnv *env, jobject thiz) {
     flushToFile();
-}
-
-static string fdToLink(int fd) {
-    if (fd > 0) {
-        string fdPath = "/proc/self/fd/";
-        fdPath.append(to_string(fd));
-        char file_path[1024] = {'\0'};
-        if (readlink(fdPath.c_str(), file_path, sizeof(file_path) - 1) == -1) {
-            return string("error: ").append(strerror(errno));
-        } else {
-            return string(file_path);
-        }
-    } else {
-        return "";
-    }
-}
-
-static void onMmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset) {
-    if (length < SIZE_THRESHOLD) {
-        // 小内存分配，忽略
-        return;
-    }
-    auto address = reinterpret_cast<uintptr_t>(addr);
-    auto result = addressSet.insert(address);
-    if (!result.second) {
-        // 对同一个地址多次 mmap(可能因为 hook 过多导致)，跳过
-        return;
-    }
-    // 尝试获取 JVM/Native 堆栈
-    string stack;
-    if (!obtainStack(stack) || stack.empty())
-        obtainNativeStack(stack);
-
-    if (stack.empty())
-        stack.append("stack unwind error").append(STACK_ELEMENT_DIV);
-
-    // fd 解析为映射的文件 path
-    string fdLink = fdToLink(fd);
-
-    mmap_info info{
-            .address = address,
-            .length = length,
-            .prot = prot,
-            .flag = flags,
-            .fd = fd,
-            .fdLink = fdLink,
-            .offset = offset,
-            .stack = stack,
-    };
-    postOnMmap(&info);
-}
-
-void callOnMmap64(void *addr, size_t length, int prot, int flags, int fd, off_t offset) {
-    onMmap(addr, length, prot, flags, fd, offset);
-}
-
-void callOnMmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset) {
-    onMmap(addr, length, prot, flags, fd, offset);
-}
-
-void callOnMunmap(void *addr, size_t length) {
-    if (length < SIZE_THRESHOLD) {
-        return;
-    }
-    auto address = reinterpret_cast<uintptr_t>(addr);
-    int success = addressSet.erase(address);
-    if (!success) {
-        // 对同一个地址多次 munmap(可能因为 hook 过多导致)，
-        // 不过没必要跳过，因为有跨线程 munmap 的情况，比如 pthread 的创建和退出流程
-    }
-    munmap_info info{
-            .address = address,
-            .length = length,
-    };
-    postOnMunmap(&info);
 }
 
 void callJava(void *addr, size_t length, int prot, int flags, int fd, off_t offset) {

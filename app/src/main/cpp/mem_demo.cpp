@@ -46,8 +46,9 @@ Java_com_mem_MemTest_mmapSmall(JNIEnv *env, jobject thiz) {
         LOGI("Mapped 分配成功：%zu-bytes, address: %p", size, space);
 //        memset(space, 'S', size);
     }
-
+    void *p = malloc(4 * 1024 * 1024);
     munmap(space, size);
+    free(p);
 }
 
 static int callback(struct dl_phdr_info *info, size_t size, void *data) {

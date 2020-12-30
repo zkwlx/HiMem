@@ -6,23 +6,23 @@ HiMem 是针对 Android 系统开发的内存使用监控与分析套件，目�
 <tr>
 
   <td>
-  <a href="https://zkwlx.github.io/HiMem/doc/trace_2.himem.html">
-  <img width="200" height="200" alt="内存分配趋势图" src="doc/line.png"  />
+  <a href="https://zkwlx.github.io/HiMem/docs/trace_2.himem.html">
+  <img width="200" height="200" alt="内存分配趋势图" src="docs/line.png"  />
     <p/>内存分配趋势图 点击体验
   </a>
 
   </td>
 
   <td>
-  <a href="https://zkwlx.github.io/HiMem/doc/trace_2.himem.html">
-  <img width="200" height="200" alt="内存分配排名（精确聚类）" src="doc/bar1.png" />
+  <a href="https://zkwlx.github.io/HiMem/docs/trace_2.himem.html">
+  <img width="200" height="200" alt="内存分配排名（精确聚类）" src="docs/bar1.png" />
     <p/>内存分配排名-精确聚类 点击体验
   </a>
   </td>
 
   <td>
-  <a href="https://zkwlx.github.io/HiMem/doc/trace_2.himem.html">
-  <img width="200" height="200" alt="内存分配排名（粗略聚类）" src="doc/bar2.png" />
+  <a href="https://zkwlx.github.io/HiMem/docs/trace_2.himem.html">
+  <img width="200" height="200" alt="内存分配排名（粗略聚类）" src="docs/bar2.png" />
     <p/>内存分配排名-粗略聚类 点击体验
   </a>
   </td>
@@ -113,23 +113,23 @@ zkw@zkw-mint$: python3 ./HiMemAnalyzer/himem.py trace_1609069768.himem
 <tr>
 
   <td>
-  <a href="https://zkwlx.github.io/HiMem/doc/trace_2.himem.html">
-  <img width="200" height="200" alt="内存分配趋势图" src="doc/line.png"  />
+  <a href="https://zkwlx.github.io/HiMem/docs/trace_2.himem.html">
+  <img width="200" height="200" alt="内存分配趋势图" src="docs/line.png"  />
     <p/>内存分配趋势图 点击体验
   </a>
 
   </td>
 
   <td>
-  <a href="https://zkwlx.github.io/HiMem/doc/trace_2.himem.html">
-  <img width="200" height="200" alt="内存分配排名（精确聚类）" src="doc/bar1.png" />
+  <a href="https://zkwlx.github.io/HiMem/docs/trace_2.himem.html">
+  <img width="200" height="200" alt="内存分配排名（精确聚类）" src="docs/bar1.png" />
     <p/>内存分配排名-精确聚类 点击体验
   </a>
   </td>
 
   <td>
-  <a href="https://zkwlx.github.io/HiMem/doc/trace_2.himem.html">
-  <img width="200" height="200" alt="内存分配排名（粗略聚类）" src="doc/bar2.png" />
+  <a href="https://zkwlx.github.io/HiMem/docs/trace_2.himem.html">
+  <img width="200" height="200" alt="内存分配排名（粗略聚类）" src="docs/bar2.png" />
     <p/>内存分配排名-粗略聚类 点击体验
   </a>
   </td>
@@ -145,14 +145,14 @@ zkw@zkw-mint$: python3 ./HiMemAnalyzer/himem.py trace_1609069768.himem
 
 每个图表鼠标悬停时都会有详细信息，如下图：
 
-<img width="606" height="449" alt="详细信息" src="doc/detail.png">
+<img width="606" height="449" alt="详细信息" src="docs/detail.png">
 
 ### 原理
 `TODO`
 
 ### 鸣谢
-* [https://github.com/iqiyi/xHook](https://github.com/iqiyi/xHook)
-* [https://github.com/facebookincubator/profilo](https://github.com/facebookincubator/profilo)
+* [iqiyi/xHook](https://github.com/iqiyi/xHook)
+* [facebookincubator/profilo](https://github.com/facebookincubator/profilo)
 
 # License
 ```

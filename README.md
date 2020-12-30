@@ -1,5 +1,36 @@
 ### 简介
 HiMem 是针对 Android 系统开发的内存使用监控与分析套件，目前支持 mmap/munmap/malloc/calloc/realloc/free 等库函数的监控，同时提供高性能的 Java 层和 Native 层调用栈捕获能力。
+
+<p>
+<table cellspacing="10">
+<tr>
+
+  <td>
+  <a href="https://zkwlx.github.io/HiMem/doc/trace_2.himem.html">
+  <img alt="内存分配趋势图" src="doc/line.png"  />
+    <p/>内存分配趋势图 点击体验
+  </a>
+
+  </td>
+
+  <td>
+  <a href="https://zkwlx.github.io/HiMem/doc/trace_2.himem.html">
+  <img alt="内存分配排名（精确聚类）" src="doc/bar1.png" />
+    <p/>内存分配排名-精确聚类 点击体验
+  </a>
+  </td>
+
+  <td>
+  <a href="https://zkwlx.github.io/HiMem/doc/trace_2.himem.html">
+  <img alt="内存分配排名（粗略聚类）" src="doc/bar2.png" />
+    <p/>内存分配排名-粗略聚类 点击体验
+  </a>
+  </td>
+
+</tr>
+</table>
+</p>
+
 ### 集成方式
 #### 常规集成
 HiMem 主要包含下列部分：

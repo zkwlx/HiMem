@@ -1,5 +1,5 @@
 ### 简介
-HiMem 是针对 Android 系统的内存使用监控与分析套件，目前支持 mmap/munmap/malloc/calloc/realloc/free 等库函数的监控，并且提供高性能的 Java 层和 Native 层调用栈捕获能力。
+HiMem 是针对 Android 系统开发的内存使用监控与分析套件，目前支持 mmap/munmap/malloc/calloc/realloc/free 等库函数的监控，同时提供高性能的 Java 层和 Native 层调用栈捕获能力。
 ### 集成方式
 #### 常规集成
 HiMem 主要包含下列部分：

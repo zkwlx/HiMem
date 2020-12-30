@@ -76,6 +76,8 @@ class MyApplication : Application() {
 }
 ```
 启动后 HiMem 会在你指定的日志目录下创建 trace_timestamp.himem 日志文件。
+> 建议只在 Android 9.0/8.1.0 系统上开启，因为高性能 Java 栈捕获逻辑在其他系统上不太稳定
+
 #### 高级接口
 重点说下 HiMemNative.refreshHook() 方法，注释如下：
 ``` kotlin

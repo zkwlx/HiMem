@@ -148,11 +148,11 @@ zkw@zkw-mint$: python3 ./HiMemAnalyzer/himem.py trace_1609069768.himem
 <img width="606" height="449" alt="详细信息" src="doc/detail.png">
 
 ### 原理
+`TODO`
 
 ### 鸣谢
-[https://github.com/iqiyi/xHook](https://github.com/iqiyi/xHook)
-
-[https://github.com/facebookincubator/profilo](https://github.com/facebookincubator/profilo)
+* [https://github.com/iqiyi/xHook](https://github.com/iqiyi/xHook)
+* [https://github.com/facebookincubator/profilo](https://github.com/facebookincubator/profilo)
 
 # License
 ```

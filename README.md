@@ -80,7 +80,65 @@ zkw@zkw-mint$: python3 ./HiMemAnalyzer/himem.py trace_1609069768.himem
 报告分三部分：内存分配趋势图；内存分配排名（精确聚类）；内存分配排名（粗略聚类）。
 分别如下所示：
 
+<p>
+<table cellspacing="10">
+<tr>
+
+  <td>
+  <a href="https://zkwlx.github.io/HiMem/doc/trace_2.himem.html">
+  <img alt="内存分配趋势图" src="doc/line.png"  />
+    <p/>内存分配趋势图 点击体验
+  </a>
+
+  </td>
+
+  <td>
+  <a href="https://zkwlx.github.io/HiMem/doc/trace_2.himem.html">
+  <img alt="内存分配排名（精确聚类）" src="doc/bar1.png" />
+    <p/>内存分配排名（精确聚类） 点击体验
+  </a>
+  </td>
+
+  <td>
+  <a href="https://zkwlx.github.io/HiMem/doc/trace_2.himem.html">
+  <img alt="内存分配排名（粗略聚类）" src="doc/bar2.png" />
+    <p/>内存分配排名（粗略聚类） 点击体验
+  </a>
+  </td>
+
+</tr>
+</table>
+</p>
+
+* 内存分配趋势图：表示运行期间 App 所发生的 mmap/munmap 或 malloc/free 的总体趋势，X 轴可以认为是时序
+* 内存分配排名：表示聚类后的内存分配从大到小排名，具体聚类算法如下
+    * 精确聚类：mmap 的 length、protect、flag 参数以及调用栈 stack 完全相同
+    * 粗略聚类：mmap 的 protect、flag 参数以及调用栈 stack 的第一行相同
+
+每个图表鼠标悬停时都会有详细信息，如下图：
+
+<img width="606" height="449" alt="详细信息" src="doc/detail.png">
 
 ### 原理
 
 ### 鸣谢
+[https://github.com/iqiyi/xHook](https://github.com/iqiyi/xHook)
+
+[https://github.com/facebookincubator/profilo](https://github.com/facebookincubator/profilo)
+
+# License
+```
+Copyright 2019 Square, Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+```

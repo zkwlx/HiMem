@@ -7,7 +7,7 @@ HiMem 是针对 Android 系统开发的内存使用监控与分析套件，目�
 
   <td>
   <a href="https://zkwlx.github.io/HiMem/doc/trace_2.himem.html">
-  <img width="250" height="250" alt="内存分配趋势图" src="doc/line.png"  />
+  <img width="200" height="200" alt="内存分配趋势图" src="doc/line.png"  />
     <p/>内存分配趋势图 点击体验
   </a>
 
@@ -15,14 +15,14 @@ HiMem 是针对 Android 系统开发的内存使用监控与分析套件，目�
 
   <td>
   <a href="https://zkwlx.github.io/HiMem/doc/trace_2.himem.html">
-  <img width="250" height="250" alt="内存分配排名（精确聚类）" src="doc/bar1.png" />
+  <img width="200" height="200" alt="内存分配排名（精确聚类）" src="doc/bar1.png" />
     <p/>内存分配排名-精确聚类 点击体验
   </a>
   </td>
 
   <td>
   <a href="https://zkwlx.github.io/HiMem/doc/trace_2.himem.html">
-  <img width="250" height="250" alt="内存分配排名（粗略聚类）" src="doc/bar2.png" />
+  <img width="200" height="200" alt="内存分配排名（粗略聚类）" src="doc/bar2.png" />
     <p/>内存分配排名-粗略聚类 点击体验
   </a>
   </td>
@@ -114,7 +114,7 @@ zkw@zkw-mint$: python3 ./HiMemAnalyzer/himem.py trace_1609069768.himem
 
   <td>
   <a href="https://zkwlx.github.io/HiMem/doc/trace_2.himem.html">
-  <img alt="内存分配趋势图" src="doc/line.png"  />
+  <img width="200" height="200" alt="内存分配趋势图" src="doc/line.png"  />
     <p/>内存分配趋势图 点击体验
   </a>
 
@@ -122,14 +122,14 @@ zkw@zkw-mint$: python3 ./HiMemAnalyzer/himem.py trace_1609069768.himem
 
   <td>
   <a href="https://zkwlx.github.io/HiMem/doc/trace_2.himem.html">
-  <img alt="内存分配排名（精确聚类）" src="doc/bar1.png" />
+  <img width="200" height="200" alt="内存分配排名（精确聚类）" src="doc/bar1.png" />
     <p/>内存分配排名-精确聚类 点击体验
   </a>
   </td>
 
   <td>
   <a href="https://zkwlx.github.io/HiMem/doc/trace_2.himem.html">
-  <img alt="内存分配排名（粗略聚类）" src="doc/bar2.png" />
+  <img width="200" height="200" alt="内存分配排名（粗略聚类）" src="doc/bar2.png" />
     <p/>内存分配排名-粗略聚类 点击体验
   </a>
   </td>

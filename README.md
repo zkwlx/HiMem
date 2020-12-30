@@ -1,23 +1,24 @@
 ### 简介
-HiMem 是针对 Android 系统的内存使用监控与分析套件，目前支持 mmap/munmap/malloc/calloc/realloc/free 等库函数的监控，当发生内存分配的调用时 SDK 会收集函数参数以及 Java 层和 Native 层调用栈。
+HiMem 是针对 Android 系统的内存使用监控与分析套件，目前支持 mmap/munmap/malloc/calloc/realloc/free 等库函数的监控，并且提供高性能的 Java 层和 Native 层调用栈捕获能力。
 ### 集成方式
 #### 常规集成
 HiMem 主要包含下列部分：
 * HiMem/ 目录下是需要集成到 APK 中的 SDK；
 * HiMemAnalyzer/ 目录下是日志分析工具，用于一键生成分析报告；
 * app/ 是 Demo 应用；
-可以直接通过源码集成到 APK：
+
+可以直接通过源码集成到应用：
 ``` gradle
 implementation project(":HiMem")
 ```
-或者通过 mavenLocal 的方式集成：
+或者通过 mavenLocal 的方式集成（当然需要先打包到本地）：
 ``` gradle
 implementation "zhihu.himem:himem:1.0.0"
 ```
 SDK 对外接口类是 HiMemNative，初始化方法是 initAndStart()，注释如下：
 ``` kotlin
 /**
- * 初始化 himem，包括创建 .himem 日志文件，初始化信号处理、xhook等
+ * 初始化 himem，包括创建本次 .himem 日志文件，初始化信号处理、xhook等
  *
  * @param dumpDir .himem 文件的父目录
  * @param mmapSizeThreshold mmap 阈值，超过阈值时触发监控逻辑
@@ -32,18 +33,14 @@ class MyApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         
-        // 只监控主进程
-        if (!isMainProcess())
+        if (!isMainProcess()) // 只监控主进程
             return;
                 
-        // 创建存放日志的目录
         val root = File(externalCacheDir!!.absolutePath, "HiMem/")
-        root.mkdirs()
-        // 当 mmap 超过 1MB 时触发监控逻辑
-        val mmapSize = 1 * 1024 * 1024
+        root.mkdirs() // 创建存放日志的目录
+        val mmapSize = 1 * 1024 * 1024 // 当 mmap 超过 1MB 时触发监控逻辑
         val flushSize = 8 * 1024
-        // 启动 HiMem
-        HiMemNative.initAndStart(root.absolutePath, mmapSize, flushSize)
+        HiMemNative.initAndStart(root.absolutePath, mmapSize, flushSize) // 启动 HiMem
     }
 }
 ```

@@ -5,6 +5,7 @@
 #include "mem_tracer.h"
 #include <cerrno>
 #include <cinttypes>
+#include "mem_hook.h"
 
 extern "C" {
 #include "log.h"
@@ -86,7 +87,7 @@ void createFile(char *dumpDir) {
         struct timeval stamp{};
         gettimeofday(&stamp, nullptr);
         char *filePath;
-        asprintf(&filePath, "%s/trace_%ld.himem", dumpDir, stamp.tv_sec);
+        asprintf(&filePath, "%s/trace_%d_%ld.himem", dumpDir, MODE, stamp.tv_sec);
         dumpFile = fopen(filePath, "ae");
         if (dumpFile == nullptr) {
             LOGE("文件打开错误：%s，错误原因：%s", filePath, strerror(errno));
@@ -110,7 +111,7 @@ void postOnMalloc(malloc_info *data) {
     // 样例：alloc[]0xee6891[]104800[]java/lang/String.get|com/zhihu/A.mmm|xxx
     string content = "alloc[]" + to_string(data->address)
                      + "[]" + to_string(data->length)
-                     + "[]" + data->stack;
+                     + "[]" + data->stack + "\n";
     writeLine((char *) content.c_str(), content.size());
 }
 

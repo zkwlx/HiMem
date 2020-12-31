@@ -243,9 +243,9 @@ class BarPlotMaker(BaseMaker):
         """
         newEventList = []
         for event in eventList:
-            if event.type == "mmap":
+            if event.type in ["mmap", "alloc"]:
                 newEventList.append(event)
-            elif event.type == "munmap":
+            elif event.type in ["munmap", "free"]:
                 self.removeForMunmaped(event, newEventList)
         return newEventList
 

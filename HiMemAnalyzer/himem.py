@@ -9,7 +9,9 @@ import os
 import sys
 
 from data.Event import Event
+from handler.AllocHandler import AllocHandler
 from handler.BaseHandler import SEP_EQ
+from handler.FreeHandler import FreeHandler
 from handler.MMAPHandler import MMAPHandler
 from handler.MUNMAPHandler import MUNMAPHandler
 from plot.BokehPlotMaker import BokehPlotMaker
@@ -18,7 +20,7 @@ from plot.PlotInfo import PlotInfo
 LOG_PATH = ""
 LOG_NAME = ""
 
-handlerList = [MMAPHandler(), MUNMAPHandler()]
+handlerList = [MMAPHandler(), MUNMAPHandler(), AllocHandler(), FreeHandler()]
 
 
 def handleTraceFile() -> list:

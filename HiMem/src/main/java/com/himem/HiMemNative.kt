@@ -4,6 +4,16 @@ import android.os.Build
 
 object HiMemNative {
 
+    /**
+     * 监控 mmap/munmap
+     */
+    const val MMAP_MODE = 1
+
+    /**
+     * 监控 malloc/calloc/relloc/free
+     */
+    const val ALLOC_MODE = 2
+
     init {
         System.loadLibrary("himem-native")
     }
@@ -32,9 +42,15 @@ object HiMemNative {
      * @param dumpDir .himem 文件的父目录
      * @param mmapSizeThreshold mmap 阈值，超过阈值时触发监控逻辑
      * @param flushThreshold 日志回写磁盘的阈值，超过阈值 fflush
+     * @param mode 监控模式，一次启动只支持一种模式，目前提供 [MMAP_MODE] 和 [ALLOC_MODE]，意味着监控不同的内存分配函数。默认使用 [MMAP_MODE]
      */
-    fun initAndStart(dumpDir: String, mmapSizeThreshold: Long, flushThreshold: Long) {
-        init(dumpDir, mmapSizeThreshold, flushThreshold)
+    fun initAndStart(
+        dumpDir: String,
+        mmapSizeThreshold: Long,
+        flushThreshold: Long,
+        mode: Int = MMAP_MODE
+    ) {
+        init(dumpDir, mmapSizeThreshold, flushThreshold, mode)
     }
 
     /**
@@ -60,7 +76,12 @@ object HiMemNative {
 
     private external fun setDebug(enable: Int)
 
-    private external fun init(dumpDir: String, mmapSizeThreshold: Long, flushThreshold: Long)
+    private external fun init(
+        dumpDir: String,
+        mmapSizeThreshold: Long,
+        flushThreshold: Long,
+        mode: Int
+    )
 
     private external fun deInit()
 

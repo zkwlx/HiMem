@@ -29,7 +29,12 @@ extern "C" {
 #define PTHREAD_ATTR_OFFSET 24U
 #endif
 
+#define MMAP_MODE 1
+#define ALLOC_MODE 2
+
 using namespace std;
+
+int MODE = MMAP_MODE;
 
 void set_hook_debug(int enable) {
     xhook_enable_debug(enable);
@@ -76,14 +81,12 @@ void my_pthread_exit(void *return_value) {
 
 void *my_malloc(size_t size) {
     void *result = malloc(size);
-    LOGI("malloc =====> %p, %d", result, size);
     callOnMalloc(result, size);
     return result;
 }
 
 void *my_calloc(size_t count, size_t size) {
     void *result = calloc(count, size);
-    LOGI("calloc =====> %p, %d", result, size);
 
     callOnMalloc(result, count * size);
     return result;
@@ -91,47 +94,57 @@ void *my_calloc(size_t count, size_t size) {
 
 void *my_realloc(void *ptr, size_t size) {
     void *result = realloc(ptr, size);
-    LOGI("realloc =====> %p, %d", result, size);
-
     callOnMalloc(result, size);
     return result;
 }
 
 void my_free(void *ptr) {
-    LOGI("free =====> %p", ptr);
-
     if (ptr) {
         callOnFree(ptr);
     }
     free(ptr);
 }
 
-void do_hook() {
-    bool isMmap = false;
-    if (isMmap) {
-        //追踪某些调用 (忽略 linker 和 linker64)
-        xhook_register(".*\\.so$", "mmap", (void *) my_mmap, nullptr);
-        xhook_register(".*\\.so$", "mmap64", (void *) my_mmap64, nullptr);
-        xhook_register(".*\\.so$", "munmap", (void *) my_munmap, nullptr);
-        xhook_register(".*/libc.so$", "pthread_exit", (void *) my_pthread_exit, nullptr);
-        xhook_ignore(".*/linker$", "mmap");
-        xhook_ignore(".*/linker$", "mmap64");
-        xhook_ignore(".*/linker$", "munmap");
-        xhook_ignore(".*/linker64$", "mmap");
-        xhook_ignore(".*/linker64$", "mmap64");
-        xhook_ignore(".*/linker64$", "munmap");
-    } else {
-        // 由于 malloc 系列函数调用频繁，只追踪自己包名下的 so
-        string packageName = getPackageName();
-        replaceAll(packageName, ".", "\\.");
-        string regex = "^.*" + packageName + ".*\\.so$";
-        xhook_register(regex.c_str(), "malloc", (void *) my_malloc, nullptr);
-        xhook_register(regex.c_str(), "calloc", (void *) my_calloc, nullptr);
-        xhook_register(regex.c_str(), "realloc", (void *) my_realloc, nullptr);
-        xhook_register(regex.c_str(), "free", (void *) my_free, nullptr);
-// 调试用
+static void hook_for_mmap() {
+    xhook_register(".*\\.so$", "mmap", (void *) my_mmap, nullptr);
+    xhook_register(".*\\.so$", "mmap64", (void *) my_mmap64, nullptr);
+    xhook_register(".*\\.so$", "munmap", (void *) my_munmap, nullptr);
+    xhook_register(".*/libc.so$", "pthread_exit", (void *) my_pthread_exit, nullptr);
+    xhook_ignore(".*/linker$", "mmap");
+    xhook_ignore(".*/linker$", "mmap64");
+    xhook_ignore(".*/linker$", "munmap");
+    xhook_ignore(".*/linker64$", "mmap");
+    xhook_ignore(".*/linker64$", "mmap64");
+    xhook_ignore(".*/linker64$", "munmap");
+}
+
+static void hook_for_alloc() {
+    // 由于 malloc 系列函数调用频繁，只追踪自己包名下的 so
+    string packageName = getPackageName();
+    replaceAll(packageName, ".", "\\.");
+    string regex = "^.*" + packageName + ".*\\.so$";
+//    xhook_register(regex.c_str(), "malloc", (void *) my_malloc, nullptr);
+//    xhook_register(regex.c_str(), "calloc", (void *) my_calloc, nullptr);
+//    xhook_register(regex.c_str(), "realloc", (void *) my_realloc, nullptr);
+//    xhook_register(regex.c_str(), "free", (void *) my_free, nullptr);
+
+    xhook_register(".*\\.so$", "malloc", (void *) my_malloc, nullptr);
+    xhook_register(".*\\.so$", "calloc", (void *) my_calloc, nullptr);
+    xhook_register(".*\\.so$", "realloc", (void *) my_realloc, nullptr);
+    xhook_register(".*\\.so$", "free", (void *) my_free, nullptr);
+    // 调试用
 //        xhook_register(".*\\.so$", "free", (void *) my_free, nullptr);
-//        xhook_ignore(".*libc.so$", "free");
+    xhook_ignore(".*libc.so$", "free");
+    xhook_ignore(".*libc.so$", "malloc");
+    xhook_ignore(".*libc.so$", "calloc");
+    xhook_ignore(".*libc.so$", "realloc");
+}
+
+void do_hook() {
+    if (MODE == MMAP_MODE) {
+        hook_for_mmap();
+    } else if (MODE == ALLOC_MODE) {
+        hook_for_alloc();
     }
     // old_func 用法
 //    void (*orig_printf)(const char*);

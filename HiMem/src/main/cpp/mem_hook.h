@@ -5,6 +5,8 @@
 #ifndef SOCKETS_NATIVE_SOCKET_HOOK_H
 #define SOCKETS_NATIVE_SOCKET_HOOK_H
 
+extern int MODE;
+
 void set_hook_debug(int enable);
 
 void do_hook();

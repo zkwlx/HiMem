@@ -95,7 +95,7 @@ struct backtrace_state_t {
 
 // 栈起始的偏移量
 #define STACK_OFFSET 4
-// 栈从偏移处开始的行数
+// 栈从偏移处开始的最大行数
 #define STACK_SIZE 15
 
 static __thread int lineCount;
@@ -129,6 +129,7 @@ static size_t capture_backtrace(void **buffer, size_t max) {
 }
 
 void obtainNativeStack(std::string &stack) {
+    //TODO 是否需要注册 sigjmp
     void *buffer[STACK_SIZE];
     int frames_size = capture_backtrace(buffer, STACK_SIZE);
     for (int i = 0; i < frames_size; i++) {

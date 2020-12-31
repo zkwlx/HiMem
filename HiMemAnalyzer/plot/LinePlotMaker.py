@@ -5,6 +5,7 @@
 # @File    : LinePlotMaker.py
 from bokeh.plotting import figure, Figure
 
+from data.Event import Event
 from plot.BaseMaker import BaseMaker
 from plot.PlotInfo import PlotInfo
 from utils.SizeUtils import convertSize
@@ -37,17 +38,26 @@ class LinePlotMaker(BaseMaker):
     def flatEventList(self, eventList: list) -> FlatEvent:
         flat = FlatEvent()
         totalLength = 0
+        allocList = []
         for index, event in enumerate(eventList):
             flat.typeList.append(event.type)
             flat.addressList.append(hex(event.address))
             flat.numberList.append(index)
-            flat.lengthList.append(convertSize(event.length))
             if event.type == "mmap":
                 totalLength += event.length
             elif event.type == "munmap":
                 totalLength -= event.length
+            elif event.type == "alloc":
+                allocList.append(event)
+                totalLength += event.length
+            elif event.type == "free":
+                allocEvent = self.popRecentlyAlloc(event, allocList)
+                if allocEvent is not None:
+                    totalLength -= allocEvent.length
+                    event.length = allocEvent.length
             flat.totalLengthList.append(totalLength)
             flat.totalLengthStrList.append(convertSize(totalLength))
+            flat.lengthList.append(convertSize(event.length))
             flat.protectList.append(event.protectStr)
             flat.flagList.append(event.flagStr)
             if event.fd == -1:
@@ -56,6 +66,24 @@ class LinePlotMaker(BaseMaker):
                 flat.fdList.append(event.fdLink)
             flat.stackList.append(event.stack)
         return flat
+
+    def popRecentlyAlloc(self, freeEvent: Event, allocList: list) -> Event:
+        """
+        从 allocList 中找到并移除最近的 freeEvent.address 对应的 alloc 事件
+        :param freeEvent:
+        :param allocList:
+        :return:
+        """
+        deletedEvent = None
+        for event in allocList[::-1]:
+            if event.address == freeEvent.address:
+                deletedEvent = event
+                break
+        if deletedEvent is not None:
+            allocList.remove(deletedEvent)
+        else:
+            print("[popRecentlyAlloc] 未找到相同地址的 free 事件，address:%x" % freeEvent.address)
+        return deletedEvent
 
     def makeLinePlot(self, info: PlotInfo, flat: FlatEvent) -> Figure:
         hoverToolHtml = """

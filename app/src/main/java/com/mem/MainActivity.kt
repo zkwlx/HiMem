@@ -24,11 +24,11 @@ class MainActivity : AppCompatActivity() {
 
     fun onButtonClick(view: View) {
 //        File(externalCacheDir, "pmapBefore.txt").writeText(ProcUtils.getPmap())
-        repeat(5) {
+        repeat(7000) {
             Log.i("zkw", "------> $it")
             Thread(Thread.currentThread().threadGroup, {
-                MemTest.mmapSmall()
-                Thread.sleep(1000)
+//                MemTest.mmapSmall()
+                Thread.sleep(1000000000)
             }, "xxx$it", 1 * 1024 * 1024).start()
         }
 //        val length = 512L * 1024 * 1024

@@ -45,6 +45,7 @@ static void onMmap(void *addr, size_t length, int prot, int flags, int fd, off_t
         return;
     }
     // 尝试获取 JVM/Native 堆栈
+    //TODO 考虑是否同时支持 JVM/Native 堆栈
     string stack;
     if (!obtainStack(stack) || stack.empty())
         obtainNativeStack(stack);
@@ -104,7 +105,8 @@ void callOnMalloc(void *addr, size_t size) {
         // 对同一个地址多次 malloc (可能因为 hook 过多导致)，跳过
         return;
     }
-    // 尝试获取 Native 堆栈
+    // 尝试获取 Native 堆栈。alloc 系列监控暂不获取 JVM 栈
+    //TODO 当 JVM/Native 栈可同时支持时再打开 JVM 栈
     string stack;
     obtainNativeStack(stack);
     if (stack.empty())

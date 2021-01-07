@@ -10,6 +10,7 @@ from bokeh.plotting import Figure, figure
 from data.Event import Event
 from plot.BaseMaker import BaseMaker
 from plot.PlotInfo import PlotInfo
+from utils.ColorUtils import get_n_rgb_colors
 from utils.SizeUtils import convertSize
 
 
@@ -160,11 +161,12 @@ class BarPlotMaker(BaseMaker):
             plot_height *= 2
         p = figure(plot_width=1000, plot_height=int(plot_height), title=title, x_axis_label="虚拟内存大小（字节）",
                    y_axis_label="排名", tooltips=hoverToolHtml)
+        colors = get_n_rgb_colors(len(flat.numberList))
         data = dict(x=flat.totalLengthList, y=flat.numberList, totalLengthStrList=flat.totalLengthStr,
                     proportionList=flat.proportionList, maskList=flat.maskList, countList=flat.countList,
                     stackList=flat.stackList, protStrList=flat.protStrList, flagStrList=flat.flagStrList,
-                    perLengthStrList=flat.perLengthStrList, fdStrList=flat.fdStrList)
-        p.hbar(source=data, y="y", height=0.5, left=0, right="x", color="navy")
+                    perLengthStrList=flat.perLengthStrList, fdStrList=flat.fdStrList, color=colors)
+        p.hbar(source=data, y="y", height=0.5, left=0, right="x", color="color")
 
         return p
 

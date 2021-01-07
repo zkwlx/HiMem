@@ -44,6 +44,7 @@ object HiMemNative {
      * @param flushThreshold 日志回写磁盘的阈值，超过阈值 fflush
      * @param mode 监控模式，一次启动只支持一种模式，目前提供 [MMAP_MODE] 和 [ALLOC_MODE]，意味着监控不同的内存分配函数。默认使用 [MMAP_MODE]
      */
+    @JvmOverloads
     fun initAndStart(
         dumpDir: String,
         mmapSizeThreshold: Long,

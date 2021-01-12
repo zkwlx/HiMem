@@ -150,7 +150,7 @@ zkw@zkw-mint$: python3 ./HiMemAnalyzer/himem.py trace_1609069768.himem
 <img width="606" height="449" alt="详细信息" src="docs/detail.png">
 
 ### 原理
-`TODO`
+请参考：[深入理解 Android 应用内存优化](https://github.com/zkwlx/HiMem/wiki/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-Android-%E5%86%85%E5%AD%98%E4%BC%98%E5%8C%96)
 
 ### 鸣谢
 * [iqiyi/xHook](https://github.com/iqiyi/xHook)

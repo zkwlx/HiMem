@@ -1,3 +1,7 @@
+原理请参考：[深入理解 Android 应用内存优化](https://github.com/zkwlx/HiMem/wiki/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-Android-%E5%86%85%E5%AD%98%E4%BC%98%E5%8C%96)
+
+***
+
 ### 简介
 HiMem 是针对 Android 系统开发的内存使用监控与分析套件，目前支持 mmap/munmap/malloc/calloc/realloc/free 等库函数的监控，同时提供高性能的 Java 层和 Native 层调用栈捕获能力。
 
@@ -148,9 +152,6 @@ zkw@zkw-mint$: python3 ./HiMemAnalyzer/himem.py trace_1609069768.himem
 每个图表鼠标悬停时都会有详细信息，如下图：
 
 <img width="606" height="449" alt="详细信息" src="docs/detail.png">
-
-### 原理
-请参考：[深入理解 Android 应用内存优化](https://github.com/zkwlx/HiMem/wiki/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-Android-%E5%86%85%E5%AD%98%E4%BC%98%E5%8C%96)
 
 ### 鸣谢
 * [iqiyi/xHook](https://github.com/iqiyi/xHook)

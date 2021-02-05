@@ -17,6 +17,7 @@ extern "C" {
 #define MODE_LOG 1
 /**
  * dump 模式：在内存里统一维护，mmap 时增，munmap 时减，在某个时间点保存到文件，用于观察当前进程内存分配状态
+ * @deprecated
  */
 #define MODE_DUMP 2
 
@@ -32,7 +33,7 @@ uint FLUSH_THRESHOLD = 3 * 1024;
 int modeFlag = MODE_LOG;
 
 // 几种处理模式：
-// 一、每次 mmap 或 munmap 都保存一条日志（可以是文件），之后出报表分析曲线，用于观察分配趋势
+// 一、（目前只采用着一种模式）每次 mmap 或 munmap 都保存一条日志（可以是文件），之后出报表分析曲线，用于观察分配趋势
 // 二、同上，不过阈值调高，只打印到终端，用于观察大内存分配堆栈
 // 三、在内存里统一维护，mmap 时增，munmap 时减，在某个时间点保存到文件，用于观察当前进程内存分配状态
 
@@ -73,9 +74,9 @@ void mmapForModeLog(mmap_info *data) {
  */
 void munmapForModeLog(munmap_info *data) {
     char *content;
-    // 样例：munmmap[]0xee6891[]104800
-    size_t size = asprintf(&content, "%s[]%" PRIuPTR "[]%d\n", INFO_MUNMMAP, data->address,
-                           data->length);
+    // 样例：munmmap[]0xee6891[]104800[]stack|
+    size_t size = asprintf(&content, "%s[]%" PRIuPTR "[]%d[]%s\n", INFO_MUNMMAP, data->address,
+                           data->length, data->stack.c_str());
     if (size > 0) {
         writeLine(content, size);
         free(content);

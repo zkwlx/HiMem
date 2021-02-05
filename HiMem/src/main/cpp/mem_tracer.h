@@ -33,6 +33,7 @@ struct mmap_info {
 struct munmap_info {
     uintptr_t address;
     size_t length;
+    std::string stack;
 };
 
 extern uint FLUSH_THRESHOLD;

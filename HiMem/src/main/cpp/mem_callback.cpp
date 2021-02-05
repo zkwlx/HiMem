@@ -17,6 +17,8 @@ using namespace std;
 thread_local set<uintptr_t> addressSet;
 // 默认 1MB
 uint SIZE_THRESHOLD = 1040384;
+// 是否在释放内存时获取堆栈，默认 false
+bool obtainStackOnRelease = false;
 
 static string fdToLink(int fd) {
     if (fd > 0) {
@@ -33,6 +35,17 @@ static string fdToLink(int fd) {
     }
 }
 
+static string obtainStack() {
+    // 尝试获取 JVM/Native 堆栈
+    //TODO 考虑是否同时支持 JVM/Native 堆栈
+    string stack;
+    if (!obtainStack(stack) || stack.empty())
+        obtainNativeStack(stack);
+    if (stack.empty())
+        stack.append("stack unwind error").append(STACK_ELEMENT_DIV);
+    return stack;
+}
+
 static void onMmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset) {
     if (length < SIZE_THRESHOLD) {
         // 小内存分配，忽略
@@ -45,13 +58,7 @@ static void onMmap(void *addr, size_t length, int prot, int flags, int fd, off_t
         return;
     }
     // 尝试获取 JVM/Native 堆栈
-    //TODO 考虑是否同时支持 JVM/Native 堆栈
-    string stack;
-    if (!obtainStack(stack) || stack.empty())
-        obtainNativeStack(stack);
-
-    if (stack.empty())
-        stack.append("stack unwind error").append(STACK_ELEMENT_DIV);
+    string stack = obtainStack();
 
     // fd 解析为映射的文件 path
     string fdLink = fdToLink(fd);
@@ -87,9 +94,15 @@ void callOnMunmap(void *addr, size_t length) {
         // 对同一个地址多次 munmap(可能因为 hook 过多导致)，
         // 不过没必要跳过，因为有跨线程 munmap 的情况，比如 pthread 的创建和退出流程
     }
+    string stack;
+    if (obtainStackOnRelease) {
+        // 尝试获取 JVM/Native 堆栈
+        stack = obtainStack();
+    }
     munmap_info info{
             .address = address,
             .length = length,
+            .stack = stack,
     };
     postOnMunmap(&info);
 }

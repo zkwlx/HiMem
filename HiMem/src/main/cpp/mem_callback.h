@@ -10,6 +10,8 @@
 
 extern uint SIZE_THRESHOLD;
 
+extern bool obtainStackOnRelease;
+
 void callOnMmap64(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
 
 void callOnMmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);

@@ -6,7 +6,7 @@
 from typing import Optional
 
 from data.Event import Event
-from handler.BaseHandler import BaseHandler
+from handler.BaseHandler import BaseHandler, SEP_OR
 
 
 class MUNMAPHandler(BaseHandler):
@@ -24,6 +24,9 @@ class MUNMAPHandler(BaseHandler):
         event.type = segmentList[0]
         event.address = int(segmentList[1])
         event.length = int(segmentList[2])
+
+        if len(segmentList) == 4:
+            event.stack = str(segmentList[3]).replace(SEP_OR, "\n")
 
         # 去重逻辑暂时关闭，端上sdk 已经可以较好的去重了，剩下的重复基本上都是 Thread.nativeCreate 的堆栈
         # if event.address in uniqueAddress:

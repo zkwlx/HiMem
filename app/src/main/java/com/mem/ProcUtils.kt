@@ -63,7 +63,25 @@ object ProcUtils {
     }
 
     /**
+     * 比 maps 更加详细的内容，每一个映射都会有很详细的报告
      *
+     * 输出示例：
+     * ```
+     *  12c00000-32c00000 rw-p 00000000 00:00 0                                  [anon:dalvik-main space (region space)]
+     *   Name:           [anon:dalvik-main space (region space)]
+     *   Size:             524288 kB
+     *   KernelPageSize:        4 kB
+     *   MMUPageSize:           4 kB
+     *   ...
+     *  6fb00000-6fce2000 rw-p 00000000 00:00 0                                  [anon:dalvik-/apex/com.android.art/javalib/boot.art]
+     *   Name:           [anon:dalvik-/apex/com.android.art/javalib/boot.art]
+     *   Size:               1928 kB
+     *   KernelPageSize:        4 kB
+     *   MMUPageSize:           4 kB
+     *   Rss:                1712 kB
+     *   Pss:                1246 kB
+     *   ...
+     * ```
      */
     fun getSmaps(): String {
         var content = ""

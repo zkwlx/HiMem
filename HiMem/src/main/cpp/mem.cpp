@@ -24,10 +24,6 @@ void clearEnv(JNIEnv *env) {
     env->DeleteGlobalRef(g_obj);
 }
 
-void setDebug(JNIEnv *env, jobject thiz, jint enable) {
-    set_hook_debug(enable);
-}
-
 static struct sigaction oldAction{};
 
 static void sigHandler(int sig) {
@@ -49,6 +45,8 @@ static void initSigaction() {
     }
 }
 
+#include <sys/mman.h>
+
 void
 init(JNIEnv *env, jobject thiz, jstring dumpDir, jlong mmapSizeThreshold, jlong flushThreshold,
      int mode, jboolean obtainStack) {
@@ -64,11 +62,10 @@ init(JNIEnv *env, jobject thiz, jstring dumpDir, jlong mmapSizeThreshold, jlong 
 
     initSigaction();
 
-    do_hook();
-}
+    LOGI("mmap: %p, munmap: %p, mmap64:%p, malloc:%p, calloc:%p, free:%p", mmap, munmap, mmap64,
+         malloc, calloc, free);
 
-void refreshHookForDl(JNIEnv *env, jobject thiz) {
-    rehook_for_iterate();
+    do_hook();
 }
 
 void deInit(JNIEnv *env, jobject thiz) {
@@ -122,11 +119,9 @@ void callJava(void *addr, size_t length, int prot, int flags, int fd, off_t offs
 }
 
 static JNINativeMethod methods[] = {
-        {"setDebug",         "(I)V",                      (void *) setDebug},
-        {"init",             "(Ljava/lang/String;JJIZ)V", (void *) init},
-        {"deInit",           "()V",                       (void *) deInit},
-        {"memFlush",         "()V",                       (void *) memFlush},
-        {"refreshHookForDl", "()V",                       (void *) refreshHookForDl},
+        {"init",     "(Ljava/lang/String;JJIZ)V", (void *) init},
+        {"deInit",   "()V",                       (void *) deInit},
+        {"memFlush", "()V",                       (void *) memFlush},
 };
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {

@@ -30,13 +30,6 @@ object HiMemNative {
     }
 
     /**
-     * 是否打开 Debug 日志
-     */
-    fun setLogDebug(enable: Int) {
-        setDebug(enable)
-    }
-
-    /**
      * 初始化 himem，包括创建 .himem 日志文件，初始化信号处理、xhook等
      *
      * @param dumpDir .himem 文件的父目录
@@ -70,15 +63,6 @@ object HiMemNative {
         memFlush()
     }
 
-    /**
-     * 采用 dl_iterate_phdr() 回调的方式触发新 so 的 hook（有些 so 是运行时加载的）
-     */
-    fun refreshHook() {
-        refreshHookForDl()
-    }
-
-    private external fun setDebug(enable: Int)
-
     private external fun init(
         dumpDir: String,
         mmapSizeThreshold: Long,
@@ -90,7 +74,5 @@ object HiMemNative {
     private external fun deInit()
 
     private external fun memFlush()
-
-    private external fun refreshHookForDl()
 
 }

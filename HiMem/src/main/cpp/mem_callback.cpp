@@ -17,6 +17,8 @@ using namespace std;
 thread_local set<uintptr_t> addressSet;
 // 默认 1MB
 uint SIZE_THRESHOLD = 1040384;
+// malloc 阈值为 64KB
+uint MALLOC_SIZE_THRESHOLD = 64 * 1024;
 // 是否在释放内存时获取堆栈，默认 false
 bool obtainStackOnRelease = false;
 
@@ -39,8 +41,8 @@ static string obtainStack() {
     // 尝试获取 JVM/Native 堆栈
     //TODO 考虑是否同时支持 JVM/Native 堆栈
     string stack;
-    if (!obtainStack(stack) || stack.empty())
-        obtainNativeStack(stack);
+//    if (!obtainStack(stack) || stack.empty())
+    obtainNativeStack(stack);
     if (stack.empty())
         stack.append("stack unwind error").append(STACK_ELEMENT_DIV);
     return stack;
@@ -108,7 +110,7 @@ void callOnMunmap(void *addr, size_t length) {
 }
 
 void callOnMalloc(void *addr, size_t size) {
-    if (size < SIZE_THRESHOLD) {
+    if (size < MALLOC_SIZE_THRESHOLD) {
         // 小内存分配，忽略
         return;
     }
@@ -120,8 +122,7 @@ void callOnMalloc(void *addr, size_t size) {
     }
     // 尝试获取 Native 堆栈。alloc 系列监控暂不获取 JVM 栈
     //TODO 当 JVM/Native 栈可同时支持时再打开 JVM 栈
-    string stack;
-    obtainNativeStack(stack);
+    string stack = obtainStack();
     if (stack.empty())
         stack.append("stack unwind error").append(STACK_ELEMENT_DIV);
 

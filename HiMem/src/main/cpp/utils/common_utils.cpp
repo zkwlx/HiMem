@@ -4,22 +4,30 @@
 
 #include <string>
 #include <unistd.h>
+#include <sys/stat.h>
 
 #include "common_utils.h"
 
 using namespace std;
 
+static char *packageName = nullptr;
+
 string getPackageName() {
-    pid_t pid = getpid();
-    string cmdlinePath = "/proc/" + to_string(pid) + "/cmdline";
-    FILE *cmdline = fopen(cmdlinePath.c_str(), "r");
-    if (cmdline) {
-        char packageName[64] = {0};
-        fread(packageName, sizeof(packageName), 1, cmdline);
-        fclose(cmdline);
+    if (packageName != nullptr) {
         return packageName;
     } else {
-        return "";
+        pid_t pid = getpid();
+        string cmdlinePath = "/proc/" + to_string(pid) + "/cmdline";
+        FILE *cmdline = fopen(cmdlinePath.c_str(), "r");
+        if (cmdline) {
+            uint16_t size = 128;
+            packageName = static_cast<char *>(malloc(size));
+            fread(packageName, size, 1, cmdline);
+            fclose(cmdline);
+            return packageName;
+        } else {
+            return "";
+        }
     }
 }
 

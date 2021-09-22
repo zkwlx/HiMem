@@ -3,7 +3,9 @@
 
 # Sets the minimum version of CMake required to build the native library.
 
-cmake_minimum_required(VERSION 3.4.1)
+cmake_minimum_required(VERSION 3.18.1)
+
+#enable_language(ASM)
 
 # Creates and names a library, sets it as either STATIC
 # or SHARED, and provides the relative paths to its source code.
@@ -26,20 +28,32 @@ aux_source_directory(. ROOT)
 aux_source_directory(fb_unwinder UNWINDER)
 aux_source_directory(fb_unwinder/${DIR} UNWINDER_ABI)
 aux_source_directory(utils UTILS)
+aux_source_directory(bhook BHOOK)
+aux_source_directory(xunwind XUNWIND)
+aux_source_directory(xdl XDL)
 
 add_library(
-        xhook
+        bytehook
 
         STATIC
 
-        xhook/xh_core.c
-        xhook/xh_elf.c
-        xhook/xh_jni.c
-        xhook/xh_log.c
-        xhook/xh_util.c
-        xhook/xh_version.c
-        xhook/xhook.c
-        xhook/xhook_assist.cpp
+        ${BHOOK}
+)
+
+add_library(
+        xunwind
+
+        STATIC
+
+        ${XUNWIND}
+)
+
+add_library(
+        xdl
+
+        STATIC
+
+        ${XDL}
 )
 
 # 暂时不用 looper 实现
@@ -60,8 +74,8 @@ add_library( # Sets the name of the library.
 
         # Provides a relative path to your source file(s).
         ${ROOT}
-        ${UNWINDER}
-        ${UNWINDER_ABI}
+#        ${UNWINDER}
+#        ${UNWINDER_ABI}
         ${UTILS}
         )
 
@@ -90,4 +104,6 @@ target_link_libraries( # Specifies the target library.
         # included in the NDK.
         ${log-lib}
 
-        xhook)
+        bytehook
+        xunwind
+        xdl)

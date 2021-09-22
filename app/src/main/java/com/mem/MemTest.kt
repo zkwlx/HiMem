@@ -5,7 +5,9 @@ object MemTest {
 
     external fun mmapSmall()
 
-    external fun munmapSmall()
+    external fun asprintfTest()
+
+    external fun stringTest()
 
     fun initNative() {
 

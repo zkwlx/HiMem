@@ -1,11 +1,13 @@
 package com.mem
 
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import com.himem.HiMemNative
 import java.io.File
+import kotlin.concurrent.thread
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -18,19 +20,23 @@ class MainActivity : AppCompatActivity() {
                 Log.e("zkw", "FATAL Crash :$exception")
             }
         MemTest.initNative()
-
     }
 
 
     fun onButtonClick(view: View) {
-//        File(externalCacheDir, "pmapBefore.txt").writeText(ProcUtils.getPmap())
-        repeat(7000) {
-            Log.i("zkw", "------> $it")
-            Thread(Thread.currentThread().threadGroup, {
+//        MemTest.mmapSmall()
+        MemTest.stringFromJNI()
+        File(externalCacheDir, "pmap.txt").writeText(ProcUtils.getPmap())
+        File(externalCacheDir, "maps.txt").writeText(ProcUtils.getPidMaps())
+        File(externalCacheDir, "smaps.txt").writeText(ProcUtils.getSmaps())
+
+//        repeat(7000) {
+//            Log.i("zkw", "------> $it")
+//            Thread(Thread.currentThread().threadGroup, {
 //                MemTest.mmapSmall()
-                Thread.sleep(1000000000)
-            }, "xxx$it", 1 * 1024 * 1024).start()
-        }
+//                Thread.sleep(1000000000)
+//            }, "xxx$it", 1 * 1024 * 1024).start()
+//        }
 //        val length = 512L * 1024 * 1024
 //        val file = File(externalCacheDir, "xxxxx.txt")
 //        file.createNewFile()
@@ -49,15 +55,16 @@ class MainActivity : AppCompatActivity() {
 
     fun onGcClick(view: View) {
 //        Runtime.getRuntime().gc()
-        MemTest.munmapSmall()
+        MemTest.asprintfTest()
     }
 
     var dumpCount = 0
 
     fun onDumpClick(view: View) {
-        dumpCount++
+//        dumpCount++
         HiMemNative.flushFile()
-        File(externalCacheDir, "maps_$dumpCount.txt").writeText(ProcUtils.getPidMaps())
+//        File(externalCacheDir, "maps_$dumpCount.txt").writeText(ProcUtils.getPidMaps())
+//        MemTest.stringTest()
     }
 
 

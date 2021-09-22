@@ -16,7 +16,7 @@
 
 extern "C" {
 #include "log.h"
-#include "xhook/xhook.h"
+#include "bhook/bytehook.h"
 }
 
 #if defined(__arm__)
@@ -36,28 +36,33 @@ using namespace std;
 
 int MODE = MMAP_MODE;
 
-void set_hook_debug(int enable) {
-    xhook_enable_debug(enable);
-    // debug 阶段关闭 segv 保护，以便发现问题，release 的时候需要开启，减少 hook 带来的线上崩溃
-    xhook_enable_sigsegv_protection(enable ? 0 : 1);
-}
-
 void *my_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset) {
-    void *result = mmap(addr, length, prot, flags, fd, offset);
+    // 执行 stack 清理（不可省略），只需调用一次
+    BYTEHOOK_STACK_SCOPE();
+
+//    void *result = mmap(addr, length, prot, flags, fd, offset);
+    void *result = BYTEHOOK_CALL_PREV(my_mmap, addr, length, prot, flags, fd, offset);
     callOnMmap(result, length, prot, flags, fd, offset);
     return result;
 }
 
 void *my_mmap64(void *addr, size_t length, int prot, int flags, int fd, off64_t offset) {
-    void *result = mmap64(addr, length, prot, flags, fd, offset);
+    // 执行 stack 清理（不可省略），只需调用一次
+    BYTEHOOK_STACK_SCOPE();
+
+//    void *result = mmap64(addr, length, prot, flags, fd, offset);
+    void *result = BYTEHOOK_CALL_PREV(my_mmap64, addr, length, prot, flags, fd, offset);
     callOnMmap64(result, length, prot, flags, fd, offset);
     return result;
 }
 
 int my_munmap(void *addr, size_t length) {
-    // Android8.1 上的munmap操作后面不能有其他调用，否则段错误，不知为何
+    // 执行 stack 清理（不可省略），只需调用一次
+    BYTEHOOK_STACK_SCOPE();
+
     callOnMunmap(addr, length);
-    int result = munmap(addr, length);
+//    int result = munmap(addr, length);
+    int result = BYTEHOOK_CALL_PREV(my_munmap, addr, length);
     return result;
 }
 
@@ -72,100 +77,163 @@ static pthread_attr_t *getAttrFromInternal() {
 }
 
 void my_pthread_exit(void *return_value) {
+    // 执行 stack 清理（不可省略），只需调用一次
+    BYTEHOOK_STACK_SCOPE();
+
     pthread_attr_t *attr = getAttrFromInternal();
     if (attr->stack_size != 0) {
         callOnMunmap(attr->stack_base, attr->stack_size);
     }
-    pthread_exit(return_value);
+    BYTEHOOK_CALL_PREV(my_pthread_exit, return_value);
+//    pthread_exit(return_value);
 }
 
 void *my_malloc(size_t size) {
-    void *result = malloc(size);
+    // 执行 stack 清理（不可省略），只需调用一次
+    BYTEHOOK_STACK_SCOPE();
+
+//    void *result = malloc(size);
+    void *result = BYTEHOOK_CALL_PREV(my_malloc, size);
     callOnMalloc(result, size);
     return result;
 }
 
 void *my_calloc(size_t count, size_t size) {
-    void *result = calloc(count, size);
+    // 执行 stack 清理（不可省略），只需调用一次
+    BYTEHOOK_STACK_SCOPE();
+//    void *result = calloc(count, size);
+    void *result = BYTEHOOK_CALL_PREV(my_calloc, count, size);
 
     callOnMalloc(result, count * size);
     return result;
 }
 
 void *my_realloc(void *ptr, size_t size) {
-    void *result = realloc(ptr, size);
+    // 执行 stack 清理（不可省略），只需调用一次
+    BYTEHOOK_STACK_SCOPE();
+
+//    void *result = realloc(ptr, size);
+    void *result = BYTEHOOK_CALL_PREV(my_realloc, ptr, size);
     callOnMalloc(result, size);
     return result;
 }
 
 void my_free(void *ptr) {
+    // 执行 stack 清理（不可省略），只需调用一次
+    BYTEHOOK_STACK_SCOPE();
     if (ptr) {
         callOnFree(ptr);
     }
-    free(ptr);
+//    free(ptr);
+    BYTEHOOK_CALL_PREV(my_free, ptr);
+}
+
+static bytehook_stub_t pthread_exit_hook_stub = nullptr;
+static bytehook_stub_t mmap_hook_stub = nullptr;
+static bytehook_stub_t mmap64_hook_stub = nullptr;
+static bytehook_stub_t munmap_hook_stub = nullptr;
+
+static bool allow_filter(const char *caller_path_name, void *arg) {
+    (void) arg;
+
+    if (nullptr == strstr(caller_path_name, "liblog.so") &&
+        nullptr == strstr(caller_path_name, "libc.so") &&
+        nullptr == strstr(caller_path_name, "libhimem-native.so") &&
+        nullptr == strstr(caller_path_name, "libbacktrace_libc++.so") &&
+        nullptr == strstr(caller_path_name, "libbacktrace.so") &&
+        nullptr == strstr(caller_path_name, "libcorkscrew.so") &&
+        nullptr == strstr(caller_path_name, "libc++.so")) {
+        return true;
+    } else
+        return false;
+//    string packageName = getPackageName();
+//    if (nullptr != strstr(caller_path_name, packageName.c_str()) &&
+//        nullptr == strstr(caller_path_name, "libhimem-native.so")) {
+//        LOGI("hooked so ========> %s", caller_path_name);
+//        return true;
+//    }else
+//        return false;
 }
 
 static void hook_for_mmap() {
-    xhook_register(".*\\.so$", "mmap", (void *) my_mmap, nullptr);
-    xhook_register(".*\\.so$", "mmap64", (void *) my_mmap64, nullptr);
-    xhook_register(".*\\.so$", "munmap", (void *) my_munmap, nullptr);
-    xhook_register(".*/libc.so$", "pthread_exit", (void *) my_pthread_exit, nullptr);
-    xhook_ignore(".*/linker$", "mmap");
-    xhook_ignore(".*/linker$", "mmap64");
-    xhook_ignore(".*/linker$", "munmap");
-    xhook_ignore(".*/linker64$", "mmap");
-    xhook_ignore(".*/linker64$", "mmap64");
-    xhook_ignore(".*/linker64$", "munmap");
+    bytehook_hook_single("libc.so", nullptr, "pthread_exit", (void *) my_pthread_exit, nullptr,
+                         nullptr);
+    bytehook_hook_partial(allow_filter, nullptr, nullptr, "mmap", (void *) my_mmap, nullptr,
+                          nullptr);
+    bytehook_hook_partial(allow_filter, nullptr, nullptr, "mmap64", (void *) my_mmap64,
+                          nullptr, nullptr);
+    bytehook_hook_partial(allow_filter, nullptr, nullptr, "munmap", (void *) my_munmap,
+                          nullptr, nullptr);
 }
 
-static void hook_for_alloc() {
-    // 由于 malloc 系列函数调用频繁，只追踪自己包名下的 so
-    string packageName = getPackageName();
-    replaceAll(packageName, ".", "\\.");
-    string regex = "^.*" + packageName + ".*\\.so$";
-//    xhook_register(regex.c_str(), "malloc", (void *) my_malloc, nullptr);
-//    xhook_register(regex.c_str(), "calloc", (void *) my_calloc, nullptr);
-//    xhook_register(regex.c_str(), "realloc", (void *) my_realloc, nullptr);
-//    xhook_register(regex.c_str(), "free", (void *) my_free, nullptr);
+static bytehook_stub_t malloc_hook_stub = nullptr;
+static bytehook_stub_t calloc_hook_stub = nullptr;
+static bytehook_stub_t realloc_hook_stub = nullptr;
+static bytehook_stub_t free_hook_stub = nullptr;
 
-    xhook_register(".*\\.so$", "malloc", (void *) my_malloc, nullptr);
-    xhook_register(".*\\.so$", "calloc", (void *) my_calloc, nullptr);
-    xhook_register(".*\\.so$", "realloc", (void *) my_realloc, nullptr);
-    xhook_register(".*\\.so$", "free", (void *) my_free, nullptr);
-    // 调试用
-//        xhook_register(".*\\.so$", "free", (void *) my_free, nullptr);
-    xhook_ignore(".*libc.so$", "free");
-    xhook_ignore(".*libc.so$", "malloc");
-    xhook_ignore(".*libc.so$", "calloc");
-    xhook_ignore(".*libc.so$", "realloc");
+static void hook_for_alloc() {
+    bytehook_hook_partial(allow_filter, nullptr, nullptr, "malloc", (void *) my_malloc,
+                          nullptr, nullptr);
+    bytehook_hook_partial(allow_filter, nullptr, nullptr, "calloc", (void *) my_calloc,
+                          nullptr, nullptr);
+    bytehook_hook_partial(allow_filter, nullptr, nullptr, "realloc", (void *) my_realloc,
+                          nullptr, nullptr);
+    bytehook_hook_partial(allow_filter, nullptr, nullptr, "free", (void *) my_free,
+                          nullptr, nullptr);
 }
 
 void do_hook() {
-    if (MODE == MMAP_MODE) {
-        hook_for_mmap();
-    } else if (MODE == ALLOC_MODE) {
-        hook_for_alloc();
-    }
+    bytehook_init(BYTEHOOK_MODE_AUTOMATIC, true);
+    hook_for_mmap();
+    hook_for_alloc();
+//    if (MODE == MMAP_MODE) {
+//        hook_for_mmap();
+//        hook_for_alloc();
+//    } else if (MODE == ALLOC_MODE) {
+//        hook_for_alloc();
+//    }
+
     // old_func 用法
 //    void (*orig_printf)(const char*);
 //    xhook_register(".so library", "printf", my_printf, (void*)&orig_printf);
 
     // 不要 hook 我们自己
-    xhook_ignore(".*/libhimem-native.so$", nullptr);
-    xhook_ignore(".*/liblog.so$", nullptr);
-    // 启动 hook 机制
-    //TODO 关闭debug
-    xhook_enable_debug(1);
-    xhook_enable_sigsegv_protection(1);
-    xhook_refresh(0);
-}
-
-int rehook_for_iterate() {
-    return xhook_refresh_for_iterate();
+//    xhook_ignore(".*/libhimem-native.so$", nullptr);
+//    xhook_ignore(".*/liblog.so$", nullptr);
 }
 
 void clear_hook() {
-    xhook_clear();
-    xhook_refresh(0);
+    if (calloc_hook_stub != nullptr) {
+        bytehook_unhook(calloc_hook_stub);
+        calloc_hook_stub = nullptr;
+    }
+    if (free_hook_stub != nullptr) {
+        bytehook_unhook(free_hook_stub);
+        free_hook_stub = nullptr;
+    }
+    if (malloc_hook_stub != nullptr) {
+        bytehook_unhook(malloc_hook_stub);
+        malloc_hook_stub = nullptr;
+    }
+    if (realloc_hook_stub != nullptr) {
+        bytehook_unhook(realloc_hook_stub);
+        realloc_hook_stub = nullptr;
+    }
+    if (mmap64_hook_stub != nullptr) {
+        bytehook_unhook(mmap64_hook_stub);
+        mmap64_hook_stub = nullptr;
+    }
+    if (mmap_hook_stub != nullptr) {
+        bytehook_unhook(mmap_hook_stub);
+        mmap_hook_stub = nullptr;
+    }
+    if (munmap_hook_stub != nullptr) {
+        bytehook_unhook(munmap_hook_stub);
+        munmap_hook_stub = nullptr;
+    }
+    if (pthread_exit_hook_stub != nullptr) {
+        bytehook_unhook(pthread_exit_hook_stub);
+        pthread_exit_hook_stub = nullptr;
+    }
 }
 

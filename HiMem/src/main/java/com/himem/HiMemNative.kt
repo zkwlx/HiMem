@@ -7,12 +7,17 @@ object HiMemNative {
     /**
      * 监控 mmap/munmap
      */
-    const val MMAP_MODE = 1
+    const val MMAP_MODE = 0x1
 
     /**
      * 监控 malloc/calloc/relloc/free
      */
-    const val ALLOC_MODE = 2
+    const val ALLOC_MODE = 0x2
+
+    /**
+     * 监控 mmap/munmap 和 malloc/calloc/relloc/free
+     */
+    const val MMAP_AND_ALLOC_MODE = 0x4
 
     init {
         System.loadLibrary("himem-native")
@@ -43,7 +48,7 @@ object HiMemNative {
         dumpDir: String,
         mmapSizeThreshold: Long,
         flushThreshold: Long,
-        mode: Int = MMAP_MODE,
+        mode: Int = MMAP_AND_ALLOC_MODE,//TODO
         obtainStackOnRelease: Boolean = false
     ) {
         init(dumpDir, mmapSizeThreshold, flushThreshold, mode, obtainStackOnRelease)
@@ -61,6 +66,10 @@ object HiMemNative {
      */
     fun flushFile() {
         memFlush()
+    }
+
+    fun pmap(pid: Int): String {
+        return PmapCmd.pmap(pid)
     }
 
     private external fun init(

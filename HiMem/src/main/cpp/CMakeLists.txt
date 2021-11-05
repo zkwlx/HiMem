@@ -14,23 +14,12 @@ cmake_minimum_required(VERSION 3.18.1)
 
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -frtti")
 
-if (${CMAKE_ANDROID_ARCH_ABI} STREQUAL "armeabi-v7a")
-    set(DIR "arm")
-elseif (${CMAKE_ANDROID_ARCH_ABI} STREQUAL "arm64-v8a")
-    set(DIR "arm64")
-elseif (${CMAKE_ANDROID_ARCH_ABI} STREQUAL "x86")
-    set(DIR "x86")
-elseif (${CMAKE_ANDROID_ARCH_ABI} STREQUAL "x86_64")
-    set(DIR "x86_64")
-endif ()
-
 aux_source_directory(. ROOT)
-aux_source_directory(fb_unwinder UNWINDER)
-aux_source_directory(fb_unwinder/${DIR} UNWINDER_ABI)
+#aux_source_directory(xunwind XUNWIND)
 aux_source_directory(utils UTILS)
 aux_source_directory(bhook BHOOK)
-aux_source_directory(xunwind XUNWIND)
 aux_source_directory(xdl XDL)
+aux_source_directory(collection COLLECTION)
 
 add_library(
         bytehook
@@ -40,13 +29,13 @@ add_library(
         ${BHOOK}
 )
 
-add_library(
-        xunwind
-
-        STATIC
-
-        ${XUNWIND}
-)
+#add_library(
+#        xunwind
+#
+#        STATIC
+#
+#        ${XUNWIND}
+#)
 
 add_library(
         xdl
@@ -56,16 +45,6 @@ add_library(
         ${XDL}
 )
 
-# 暂时不用 looper 实现
-#add_library(
-#        clooper
-#
-#        STATIC
-#
-#        clooper/looper.cpp
-#        clooper/looper_test.cpp
-#)
-
 add_library( # Sets the name of the library.
         himem-native
 
@@ -74,9 +53,8 @@ add_library( # Sets the name of the library.
 
         # Provides a relative path to your source file(s).
         ${ROOT}
-#        ${UNWINDER}
-#        ${UNWINDER_ABI}
         ${UTILS}
+        ${COLLECTION}
         )
 
 # Searches for a specified prebuilt library and stores the path as a
@@ -90,8 +68,7 @@ find_library( # Sets the name of the path variable.
 
         # Specifies the name of the NDK library that
         # you want CMake to locate.
-        log
-        )
+        log)
 
 # Specifies libraries CMake should link to your target library. You
 # can link multiple libraries, such as libraries you define in this
@@ -105,5 +82,5 @@ target_link_libraries( # Specifies the target library.
         ${log-lib}
 
         bytehook
-        xunwind
+#        xunwind
         xdl)

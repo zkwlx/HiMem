@@ -1,4 +1,4 @@
-package com.mem
+package com.himem
 
 import android.os.Process
 import java.io.BufferedReader
@@ -54,8 +54,7 @@ object ProcUtils {
      */
     fun getPmap(): String {
         var content = ""
-//        val cmd = "pmap -x $pid"
-        val cmd = "pmap $pid"
+        val cmd = "pmap -x $pid"
         val p = Runtime.getRuntime().exec(cmd)
         BufferedReader(InputStreamReader(p.inputStream)).useLines {
             content = it.joinToString(separator = "\n")
@@ -95,7 +94,6 @@ object ProcUtils {
     }
 
     fun getVmSizeMB(): Long {
-        val pid = Process.myPid()
         try {
             BufferedReader(FileReader("/proc/$pid/stat"), 1024).use { pidReader ->
                 val line = pidReader.readLine()

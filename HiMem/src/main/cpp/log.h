@@ -1,10 +1,6 @@
-//
-// Created by gaochao on 2020/2/29.
-//
 
 #ifndef LOG_H
 #define LOG_H
-#include "class_layout.h"
 #include <android/log.h>
 
 #define LOG_TAG "himem"

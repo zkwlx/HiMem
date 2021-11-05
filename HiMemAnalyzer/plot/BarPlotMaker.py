@@ -29,7 +29,7 @@ class AggEvent:
         self.stackFirstLine = ""
         self.totalLength = 0
         self.count = 0
-        self.addressSet = set()
+        self.mmapAddressSet = set()
         self.fdSet = set()
         self.expand = expand
 
@@ -197,7 +197,7 @@ class BarPlotMaker(BaseMaker):
         for index, aggItem in enumerate(aggEventList):
             flat.numberList.append(index)
             flat.maskList.append(aggItem.mask)
-            flat.addressSetList.append(aggItem.addressSet)
+            flat.addressSetList.append(aggItem.mmapAddressSet)
             if not self.isExpand and aggItem.stackFirstLine != "":  # 非展开模式，只保留堆栈第一行
                 flat.stackList.append(aggItem.stackFirstLine)
             else:
@@ -234,7 +234,7 @@ class BarPlotMaker(BaseMaker):
     def aggItemGrowth(self, aggItem: AggEvent, event: Event):
         aggItem.count += 1
         aggItem.totalLength += event.length
-        aggItem.addressSet.add(event.address)
+        aggItem.mmapAddressSet.add(event.address)
         aggItem.fdSet.add(event.fdLink)
 
     def adjustForMunmap(self, eventList: list) -> list:

@@ -4,23 +4,26 @@
 #include <string>
 #include <cerrno>
 #include <set>
+#include <pthread.h>
 
 #include "mem_callback.h"
-#include "fb_unwinder/runtime.h"
 #include "mem_stack.h"
 #include "mem_tracer.h"
-
+#include "log.h"
+#include "collection/MemoryCache.h"
 
 using namespace std;
 
-// 用于 mmap/munmap 去重（处于性能考虑不加锁，而是用线程私有数据，可能有失严谨，无关紧要）
-thread_local set<uintptr_t> addressSet;
+// 用于 mmap/munmap 去重（出于性能考虑不加锁，而是用线程私有数据，可能有失严谨）
+thread_local MemoryCache *mmapAddressCache = new MemoryCache();
+// 用于 xalloc/free 去重（出于性能考虑不加锁，而是用线程私有数据，可能有失严谨）
+thread_local MemoryCache *allocAddressCache = new MemoryCache();
 // 默认 1MB
-uint SIZE_THRESHOLD = 1040384;
+uint MMAP_THRESHOLD = 1040384;
 // malloc 阈值为 64KB
-uint MALLOC_SIZE_THRESHOLD = 64 * 1024;
+uint ALLOC_THRESHOLD = 64 * 1024;
 // 是否在释放内存时获取堆栈，默认 false
-bool obtainStackOnRelease = false;
+bool obtainStackOnMunmap = false;
 
 static string fdToLink(int fd) {
     if (fd > 0) {
@@ -38,27 +41,30 @@ static string fdToLink(int fd) {
 }
 
 static string obtainStack() {
-    // 尝试获取 JVM/Native 堆栈
-    //TODO 考虑是否同时支持 JVM/Native 堆栈
+    // 如果获取不到 java stack，尝试获取 native stack
     string stack;
-//    if (!obtainStack(stack) || stack.empty())
-    obtainNativeStack(stack);
-    if (stack.empty())
+    obtainJavaStack(stack);
+    if (stack.empty()) {
+        obtainNativeStack(stack);
+    }
+    if (stack.empty()) {
         stack.append("stack unwind error").append(STACK_ELEMENT_DIV);
+    }
     return stack;
 }
 
 static void onMmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset) {
-    if (length < SIZE_THRESHOLD) {
+    if (length < MMAP_THRESHOLD) {
         // 小内存分配，忽略
         return;
     }
     auto address = reinterpret_cast<uintptr_t>(addr);
-    auto result = addressSet.insert(address);
-    if (!result.second) {
-        // 对同一个地址多次 mmap(可能因为 hook 过多导致)，跳过
-        return;
-    }
+    mmapAddressCache->insert(address);
+//    auto result = mmapAddressSet.insert(address);
+//    if (!result.second) {
+    // 对同一个地址多次 mmap(可能因为 hook 过多导致)，跳过
+//        return;
+//    }
     // 尝试获取 JVM/Native 堆栈
     string stack = obtainStack();
 
@@ -87,17 +93,18 @@ void callOnMmap(void *addr, size_t length, int prot, int flags, int fd, off_t of
 }
 
 void callOnMunmap(void *addr, size_t length) {
-    if (length < SIZE_THRESHOLD) {
+    if (length < MMAP_THRESHOLD) {
         return;
     }
     auto address = reinterpret_cast<uintptr_t>(addr);
-    int success = addressSet.erase(address);
+    bool success = mmapAddressCache->remove(address);
+//    int success = mmapAddressSet.erase(address);
     if (!success) {
         // 对同一个地址多次 munmap(可能因为 hook 过多导致)，
         // 不过没必要跳过，因为有跨线程 munmap 的情况，比如 pthread 的创建和退出流程
     }
     string stack;
-    if (obtainStackOnRelease) {
+    if (obtainStackOnMunmap) {
         // 尝试获取 JVM/Native 堆栈
         stack = obtainStack();
     }
@@ -110,18 +117,12 @@ void callOnMunmap(void *addr, size_t length) {
 }
 
 void callOnMalloc(void *addr, size_t size) {
-    if (size < MALLOC_SIZE_THRESHOLD) {
+    if (size < ALLOC_THRESHOLD) {
         // 小内存分配，忽略
         return;
     }
     auto address = reinterpret_cast<uintptr_t>(addr);
-    auto result = addressSet.insert(address);
-    if (!result.second) {
-        // 对同一个地址多次 malloc (可能因为 hook 过多导致)，跳过
-        return;
-    }
-    // 尝试获取 Native 堆栈。alloc 系列监控暂不获取 JVM 栈
-    //TODO 当 JVM/Native 栈可同时支持时再打开 JVM 栈
+    allocAddressCache->insert(address);
     string stack = obtainStack();
     if (stack.empty())
         stack.append("stack unwind error").append(STACK_ELEMENT_DIV);
@@ -135,10 +136,10 @@ void callOnMalloc(void *addr, size_t size) {
 }
 
 void callOnFree(void *addr) {
-    auto address = reinterpret_cast<uintptr_t>(addr);
-    int success = addressSet.erase(address);
+    auto address = (uintptr_t) addr;
+    bool success = allocAddressCache->remove(address);
     if (!success) {
-        // 暂时 malloc/free 一对一
+        // 如果 free 的地址没有 alloc 过，忽略
         return;
     }
     free_info info{

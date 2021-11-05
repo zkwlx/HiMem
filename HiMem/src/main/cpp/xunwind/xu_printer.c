@@ -91,8 +91,9 @@ void xu_printer_append_string(xu_printer_t *self, const char *str)
         if(len > 0)
         {
             xu_util_write(self->data.dump.fd, str, len);
-            if('\n' != str[len - 1])
-                xu_util_write(self->data.dump.fd, "\n", 1);
+            // NOTE modify for himem
+//            if('\n' != str[len - 1])
+//                xu_util_write(self->data.dump.fd, "\n", 1);
         }
     }
     else if(XU_PRINTER_TYPE_GET == self->type)
@@ -101,8 +102,9 @@ void xu_printer_append_string(xu_printer_t *self, const char *str)
         if(len > 0)
         {
             xu_printer_string_append_to_buf(self, str);
-            if('\n' != str[len - 1])
-                xu_printer_string_append_to_buf(self, "\n");
+            // NOTE modify for himem
+//            if('\n' != str[len - 1])
+//                xu_printer_string_append_to_buf(self, "\n");
         }
     }
 }

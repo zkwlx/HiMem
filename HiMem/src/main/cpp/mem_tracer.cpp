@@ -46,7 +46,6 @@ void writeLine(char *line, size_t size) {
     size_t count = fwrite(line, sizeChar, size / sizeChar, dumpFile);
     wroteSize += count * sizeChar;
     if (wroteSize > FLUSH_THRESHOLD) {
-        LOGI("----------wrote: %d", wroteSize.load());
         fflush(dumpFile);
         wroteSize = 0;
     }

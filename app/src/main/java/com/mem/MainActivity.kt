@@ -1,18 +1,22 @@
 package com.mem
 
-import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Process
 import android.util.Log
 import android.view.View
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.himem.HiMemNative
 import java.io.File
-import kotlin.concurrent.thread
+import java.io.FileWriter
+import kotlin.system.measureNanoTime
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        findViewById<TextView>(R.id.sample_text).text = "PID:${Process.myPid()}"
 
         val default = Thread.currentThread().uncaughtExceptionHandler
         Thread.currentThread().uncaughtExceptionHandler =
@@ -23,12 +27,19 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    fun onButtonClick(view: View) {
-//        MemTest.mmapSmall()
+    fun onMmapClick(view: View) {
+        MemTest.mmapSmall()
         MemTest.stringFromJNI()
         File(externalCacheDir, "pmap.txt").writeText(ProcUtils.getPmap())
         File(externalCacheDir, "maps.txt").writeText(ProcUtils.getPidMaps())
         File(externalCacheDir, "smaps.txt").writeText(ProcUtils.getSmaps())
+        val path = File(externalCacheDir, "pppmap.csv").absolutePath
+        val pid = Process.myPid()
+        val content = HiMemNative.pmap(pid)
+        val output = FileWriter(path)
+        output.use {
+            it.write(content)
+        }
 
 //        repeat(7000) {
 //            Log.i("zkw", "------> $it")
@@ -67,5 +78,20 @@ class MainActivity : AppCompatActivity() {
 //        MemTest.stringTest()
     }
 
+    fun onStackTraceTest(view: View) {
+        var s:String = ""
+        val nanoDuration = measureNanoTime {
+            repeat(20) {
+                val stacks = Thread.currentThread().stackTrace
+                for (ele in stacks) {
+                     s = ele.toString()
+                }
+            }
+        }
+        Log.i("zkw", "java stack:  -> $nanoDuration ns")
+    }
 
+    fun onNativeStackTraceTest(view: View) {
+        HiMemNative.flushFile()
+    }
 }

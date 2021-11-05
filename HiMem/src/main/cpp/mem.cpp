@@ -7,6 +7,7 @@
 #include "mem_tracer.h"
 #include "mem_stack.h"
 #include "mem_callback.h"
+#include "class_layout.h"
 
 using namespace std;
 
@@ -46,21 +47,24 @@ static void initSigaction() {
 }
 
 #include <sys/mman.h>
+#include <sstream>
 
 void
-init(JNIEnv *env, jobject thiz, jstring dumpDir, jlong mmapSizeThreshold, jlong flushThreshold,
+init(JNIEnv *env, jobject thiz, jstring dumpDir, jlong mmapThreshold, jlong flushThreshold,
      int mode, jboolean obtainStack) {
-    SIZE_THRESHOLD = mmapSizeThreshold;
+    MMAP_THRESHOLD = mmapThreshold;
     FLUSH_THRESHOLD = flushThreshold;
     MODE = mode;
-    obtainStackOnRelease = obtainStack;
+    obtainStackOnMunmap = obtainStack;
     // set global env
     setEnv(env, thiz);
     char *dumpDirChar = const_cast<char *>(env->GetStringUTFChars(dumpDir, JNI_FALSE));
     tracerStart(dumpDirChar);
     env->ReleaseStringUTFChars(dumpDir, dumpDirChar);
 
-    initSigaction();
+//    initSigaction();
+
+    initJavaStackDumper();
 
     LOGI("mmap: %p, munmap: %p, mmap64:%p, malloc:%p, calloc:%p, free:%p", mmap, munmap, mmap64,
          malloc, calloc, free);
@@ -100,6 +104,19 @@ void memFlush(JNIEnv *env, jobject thiz) {
     flushToFile();
 }
 
+void testObtainJavaStack() {
+    struct timeval stamp{};
+    gettimeofday(&stamp, nullptr);
+    long d = stamp.tv_usec;
+    string stack;
+    for (int i = 0; i < 20; i++) {
+        obtainJavaStack(stack);
+        gettimeofday(&stamp, nullptr);
+    }
+    d = (stamp.tv_usec - d) * 1000;
+    LOGI("native stack:  -> %ld ns", d);
+}
+
 void callJava(void *addr, size_t length, int prot, int flags, int fd, off_t offset) {
     JNIEnv *env;
     jmethodID mid;
@@ -121,7 +138,7 @@ void callJava(void *addr, size_t length, int prot, int flags, int fd, off_t offs
 static JNINativeMethod methods[] = {
         {"init",     "(Ljava/lang/String;JJIZ)V", (void *) init},
         {"deInit",   "()V",                       (void *) deInit},
-        {"memFlush", "()V",                       (void *) memFlush},
+        {"memFlush", "()V",                       (void *) memFlush}
 };
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {

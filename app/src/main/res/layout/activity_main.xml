@@ -22,7 +22,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
-        android:onClick="onButtonClick"
+        android:onClick="onMmapClick"
         android:text="mmap"
         tools:layout_editor_absoluteX="160dp"
         tools:layout_editor_absoluteY="407dp" />
@@ -44,6 +44,26 @@
         android:layout_gravity="center_horizontal"
         android:onClick="onDumpClick"
         android:text="dump"
+        tools:layout_editor_absoluteX="162dp"
+        tools:layout_editor_absoluteY="552dp" />
+
+    <Button
+        android:id="@+id/button4"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:onClick="onStackTraceTest"
+        android:text="onStackTraceTest"
+        tools:layout_editor_absoluteX="162dp"
+        tools:layout_editor_absoluteY="552dp" />
+
+    <Button
+        android:id="@+id/button5"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:onClick="onNativeStackTraceTest"
+        android:text="onNativeStackTraceTest"
         tools:layout_editor_absoluteX="162dp"
         tools:layout_editor_absoluteY="552dp" />
 

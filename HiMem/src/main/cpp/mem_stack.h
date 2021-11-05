@@ -7,21 +7,20 @@
 
 #include <csetjmp>
 
+#define STACK_ELEMENT_DIV_CHAR '|'
 #define STACK_ELEMENT_DIV "|"
 
 extern __thread jmp_buf jumpEnv;
 extern __thread bool canJump;
 
-struct unwinder_data {
-    ucontext_t *ucontext;
-    int64_t *frames;
-    char const **method_names;
-    char const **class_descriptors;
-    uint16_t depth;
-    uint16_t max_depth;
-};
+void initJavaStackDumper();
 
-bool obtainStack(std::string &stack);
+/**
+ * 获取当前线程 Java 调用栈
+ * @param stack 调用栈结果
+ * @param dump_locks 是否记录 lock monitor 的状态
+ */
+void obtainJavaStack(std::string &stack, bool dump_locks = false);
 
 void obtainNativeStack(std::string &stack);
 

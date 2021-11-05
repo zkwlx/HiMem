@@ -16,14 +16,29 @@
 
 #pragma once
 
+//#if defined(__arm__) || defined(__aarch64__)
+
+// The ARM ELF TLS ABI specifies[1] that the thread pointer points at a 2-word
+// TCB followed by the executable's TLS segment. Both the TCB and the
+// executable's segment are aligned according to the segment, so Bionic requires
+// a minimum segment alignment, which effectively reserves an 8-word TCB. The
+// ARM spec allocates the first TCB word to the DTV.
+//
+// [1] "Addenda to, and Errata in, the ABI for the ARM Architecture". Section 3.
+// http://infocenter.arm.com/help/topic/com.arm.doc.ihi0045e/IHI0045E_ABI_addenda.pdf
+
+#define MIN_TLS_SLOT            (-1) // update this value when reserving a slot
+#define TLS_SLOT_BIONIC_TLS     (-1)
+#define TLS_SLOT_DTV              0
+#define TLS_SLOT_THREAD_ID        1
+#define TLS_SLOT_APP              2 // was historically used for errno
+#define TLS_SLOT_OPENGL           3
+#define TLS_SLOT_OPENGL_API       4
+#define TLS_SLOT_STACK_GUARD      5
+#define TLS_SLOT_SANITIZER        6 // was historically used for dlerror
+#define TLS_SLOT_ART_THREAD_SELF  7
+
 #define ANDROID_VERSION_NUM 900
-
-struct string_t {
-    const char *data;
-    size_t length;
-};
-
-typedef bool (*unwind_callback_t)(uintptr_t, void *);
 
 #if ANDROID_VERSION_NUM >= 700
 
@@ -74,67 +89,3 @@ typedef bool (*unwind_callback_t)(uintptr_t, void *);
 #endif
 
 #endif
-
-void *getThreadInstance();
-
-uintptr_t get_art_thread();
-
-__attribute__((always_inline)) inline uint32_t CountShortyRefs(
-        string_t shorty) {
-    uint32_t result = 0;
-    for (size_t i = 0; i < shorty.length; i++) {
-        if (shorty.data[i] == 'L') {
-            result++;
-        }
-    }
-    return result;
-}
-
-__attribute__((always_inline)) inline string_t String(string_t data) {
-    return data;
-}
-
-__attribute__((always_inline)) inline string_t
-String(uintptr_t ptr, const char *, const char *, uint32_t length) {
-    return string_t{.data = (const char *) ptr, .length = length};
-}
-
-__attribute__((always_inline)) inline uint64_t GetMethodTraceId(
-        uint32_t dex_id,
-        uint32_t method_id) {
-    return (static_cast<uint64_t>(method_id) << 32) | dex_id;
-}
-
-__attribute__((always_inline)) inline uint8_t Read1(uintptr_t addr) {
-    return *reinterpret_cast<uint8_t *>(addr);
-}
-
-__attribute__((always_inline)) inline uint16_t Read2(uintptr_t addr) {
-    return *reinterpret_cast<uint16_t *>(addr);
-}
-
-__attribute__((always_inline)) inline uint32_t Read4(uintptr_t addr) {
-    return *reinterpret_cast<uint32_t *>(addr);
-}
-
-__attribute__((always_inline)) inline uint64_t Read8(uintptr_t addr) {
-    return *reinterpret_cast<uint64_t *>(addr);
-}
-
-__attribute__((always_inline)) inline uintptr_t AccessField(
-        uintptr_t addr,
-        uint32_t offset) {
-    return addr + offset;
-}
-
-__attribute__((always_inline)) inline uintptr_t
-AccessArrayItem(uintptr_t addr, uint32_t item_size, uint32_t item) {
-    return addr + (item_size * item);
-}
-
-__attribute__((always_inline)) inline uintptr_t AdvancePointer(
-        uintptr_t ptr,
-        uint32_t offset) {
-    return ptr + offset;
-}
-

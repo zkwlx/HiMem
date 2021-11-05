@@ -39,28 +39,25 @@
 #define XU_FORMATTER_ADDR "%08"PRIxPTR
 #endif
 
-#define XU_FORMATTER_PREFIX "%s#%02zu pc " XU_FORMATTER_ADDR "  "
+#define XU_FORMATTER_PREFIX "#%02zu pc " XU_FORMATTER_ADDR "  "
 
-static int xu_formatter_maps_addr(uintptr_t pc, xdl_info *info, char *buf, size_t buf_len)
-{
+static int xu_formatter_maps_addr(uintptr_t pc, xdl_info *info, char *buf, size_t buf_len) {
     memset(info, 0, sizeof(xdl_info));
 
     FILE *fp = fopen("/proc/self/maps", "r");
-    if(NULL == fp) return 0;
+    if (NULL == fp) return 0;
 
     int r = 0;
-    while(fgets(buf, (int)buf_len, fp))
-    {
+    while (fgets(buf, (int) buf_len, fp)) {
         uintptr_t lo, hi;
         int pos;
-        if(2 == sscanf(buf, "%"SCNxPTR"-%"SCNxPTR" %*4s %*lx %*x:%*x %*d%n", &lo, &hi, &pos)
-            && lo <= pc && pc < hi)
-        {
-            while(isspace(buf[pos]) && pos < (int)(buf_len - 1)) pos++;
-            if(pos >= (int)(buf_len - 1)) break;
-            if(0 == strlen(buf + pos)) break;
+        if (2 == sscanf(buf, "%"SCNxPTR"-%"SCNxPTR" %*4s %*lx %*x:%*x %*d%n", &lo, &hi, &pos)
+            && lo <= pc && pc < hi) {
+            while (isspace(buf[pos]) && pos < (int) (buf_len - 1)) pos++;
+            if (pos >= (int) (buf_len - 1)) break;
+            if (0 == strlen(buf + pos)) break;
 
-            info->dli_fbase = (void *)lo;
+            info->dli_fbase = (void *) lo;
             info->dli_fname = buf + pos;
             r = 1;
             break;
@@ -71,46 +68,51 @@ static int xu_formatter_maps_addr(uintptr_t pc, xdl_info *info, char *buf, size_
     return r;
 }
 
-void xu_formatter_print(uintptr_t* frames, size_t frames_sz, const char *prefix, xu_printer_t *printer)
-{
-    if(NULL == frames || 0 == frames_sz) return;
+void
+xu_formatter_print(uintptr_t *frames, size_t frames_sz, const char *suffix, xu_printer_t *printer) {
+    if (NULL == frames || 0 == frames_sz) return;
 
-    if(NULL == prefix) prefix = "";
+    if (NULL == suffix) suffix = "";
 
     void *cache = NULL;
     xdl_info info;
-    for(size_t i = 0; i < frames_sz; i++)
-    {
+    for (size_t i = 0; i < frames_sz; i++) {
         memset(&info, 0, sizeof(xdl_info));
         int r = 0;
 
-        if(0 != frames[i])
-        {
+        if (0 != frames[i]) {
             // find info from linker
-            r = xdl_addr((void *)(frames[i]), &info, &cache);
+            r = xdl_addr((void *) (frames[i]), &info, &cache);
 
             // find info from maps
             char buf[512];
-            if(0 == r || (uintptr_t)info.dli_fbase > frames[i])
+            if (0 == r || (uintptr_t) info.dli_fbase > frames[i])
                 r = xu_formatter_maps_addr(frames[i], &info, buf, sizeof(buf));
         }
 
+        // NOTE modify for himem
         // do print
-        if(0 == r || (uintptr_t)info.dli_fbase > frames[i])
-            xu_printer_append_format(printer, XU_FORMATTER_PREFIX"<unknown>\n",
-                prefix, i, frames[i]);
-        else if(NULL == info.dli_fname || '\0' == info.dli_fname[0])
-            xu_printer_append_format(printer, XU_FORMATTER_PREFIX"<anonymous:"XU_FORMATTER_ADDR">\n",
-                prefix, i, frames[i] - (uintptr_t)info.dli_fbase, (uintptr_t)info.dli_fbase);
-        else if(NULL == info.dli_sname || '\0' == info.dli_sname[0])
-            xu_printer_append_format(printer, XU_FORMATTER_PREFIX"%s\n",
-                prefix, i, frames[i] - (uintptr_t)info.dli_fbase, info.dli_fname);
-        else if(0 == (uintptr_t)info.dli_saddr || (uintptr_t)info.dli_saddr > frames[i])
-            xu_printer_append_format(printer, XU_FORMATTER_PREFIX"%s (%s)\n",
-                prefix, i, frames[i] - (uintptr_t)info.dli_fbase, info.dli_fname, info.dli_sname);
+        if (0 == r || (uintptr_t) info.dli_fbase > frames[i])
+            xu_printer_append_format(printer, XU_FORMATTER_PREFIX"<unknown>%s", i, frames[i],
+                                     suffix);
+        else if (NULL == info.dli_fname || '\0' == info.dli_fname[0])
+            xu_printer_append_format(printer,
+                                     XU_FORMATTER_PREFIX"<anonymous:"XU_FORMATTER_ADDR">%s",
+                                     i, frames[i] - (uintptr_t) info.dli_fbase,
+                                     (uintptr_t) info.dli_fbase, suffix);
+        else if (NULL == info.dli_sname || '\0' == info.dli_sname[0])
+            xu_printer_append_format(printer, XU_FORMATTER_PREFIX"%s%s",
+                                     i, frames[i] - (uintptr_t) info.dli_fbase, info.dli_fname,
+                                     suffix);
+        else if (0 == (uintptr_t) info.dli_saddr || (uintptr_t) info.dli_saddr > frames[i])
+            xu_printer_append_format(printer, XU_FORMATTER_PREFIX"%s (%s)%s",
+                                     i, frames[i] - (uintptr_t) info.dli_fbase, info.dli_fname,
+                                     info.dli_sname, suffix);
         else
-            xu_printer_append_format(printer, XU_FORMATTER_PREFIX"%s (%s+%"PRIuPTR")\n",
-                prefix, i, frames[i] - (uintptr_t)info.dli_fbase, info.dli_fname, info.dli_sname, frames[i] - (uintptr_t)info.dli_saddr);
+            xu_printer_append_format(printer, XU_FORMATTER_PREFIX"%s (%s+%"PRIuPTR")%s",
+                                     i, frames[i] - (uintptr_t) info.dli_fbase, info.dli_fname,
+                                     info.dli_sname, frames[i] - (uintptr_t) info.dli_saddr,
+                                     suffix);
     }
     xdl_addr_clean(&cache);
 }

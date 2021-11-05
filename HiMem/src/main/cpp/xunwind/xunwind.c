@@ -108,11 +108,11 @@ void xunwind_frames_dump(uintptr_t* frames, size_t frames_sz, int fd, const char
     xu_formatter_print(frames, frames_sz, prefix, &printer);
 }
 
-char *xunwind_frames_get(uintptr_t* frames, size_t frames_sz, const char *prefix)
+char *xunwind_frames_get(uintptr_t* frames, size_t frames_sz, const char *suffix)
 {
     xu_printer_t printer;
     xu_printer_init_get(&printer);
 
-    xu_formatter_print(frames, frames_sz, prefix, &printer);
+    xu_formatter_print(frames, frames_sz, suffix, &printer);
     return xu_printer_get(&printer);
 }

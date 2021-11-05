@@ -8,9 +8,10 @@
 
 #include <malloc.h>
 
-extern uint SIZE_THRESHOLD;
+extern uint MMAP_THRESHOLD;
+extern uint ALLOC_THRESHOLD;
 
-extern bool obtainStackOnRelease;
+extern bool obtainStackOnMunmap;
 
 void callOnMmap64(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
 

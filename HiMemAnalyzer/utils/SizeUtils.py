@@ -7,7 +7,7 @@
 import math
 
 
-def convertSize(size_bytes):
+def convertSize(size_bytes: int) -> str:
     size_bytes = abs(size_bytes)
     if size_bytes == 0:
         return "0 B"

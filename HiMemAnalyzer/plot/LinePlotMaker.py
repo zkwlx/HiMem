@@ -115,7 +115,7 @@ class LinePlotMaker(BaseMaker):
                        </div>
                        <div>
                            <span style="font-size: 5px; font-weight: bold;">stack:</span>
-                           <span style="font-size: 6px; white-space: pre-wrap;">\n@stackList</span>
+                           <span style="width: 800; font-size: 6px; white-space: pre-wrap;">\n@stackList</span>
                        </div>
                    </div>
                    """

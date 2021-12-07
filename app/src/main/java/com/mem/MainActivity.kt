@@ -1,6 +1,7 @@
 package com.mem
 
 import android.os.Bundle
+import android.os.Debug
 import android.os.Process
 import android.util.Log
 import android.view.View
@@ -9,6 +10,8 @@ import androidx.appcompat.app.AppCompatActivity
 import com.himem.HiMemNative
 import java.io.File
 import java.io.FileWriter
+import java.lang.StringBuilder
+import kotlin.concurrent.thread
 import kotlin.system.measureNanoTime
 
 class MainActivity : AppCompatActivity() {
@@ -25,7 +28,6 @@ class MainActivity : AppCompatActivity() {
             }
         MemTest.initNative()
     }
-
 
     fun onMmapClick(view: View) {
         MemTest.mmapSmall()
@@ -66,7 +68,24 @@ class MainActivity : AppCompatActivity() {
 
     fun onGcClick(view: View) {
 //        Runtime.getRuntime().gc()
-        MemTest.asprintfTest()
+//        MemTest.asprintfTest()
+        thread {
+            repeat(100000) {
+                Thread.sleep(150)
+                val sb: StringBuilder = StringBuilder("MemoryInfo: ").append("java ").append(
+                    (Runtime.getRuntime().totalMemory() - Runtime.getRuntime()
+                        .freeMemory()) / 1024 / 1024
+                )
+                    .append(", native ")
+                    .append(Debug.getNativeHeapAllocatedSize() / 1024 / 1024)
+                    .append(", virtual ")
+                    .append(MemoryUtils.getVmSizeMB())
+                    .append(", fd ")
+                    .append(MemoryUtils.getFDCount())
+                Log.i("zkw", sb.toString())
+
+            }
+        }
     }
 
     var dumpCount = 0
@@ -79,12 +98,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun onStackTraceTest(view: View) {
-        var s:String = ""
+        var s: String = ""
         val nanoDuration = measureNanoTime {
             repeat(20) {
                 val stacks = Thread.currentThread().stackTrace
                 for (ele in stacks) {
-                     s = ele.toString()
+                    s = ele.toString()
                 }
             }
         }

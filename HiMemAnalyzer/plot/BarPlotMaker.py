@@ -150,12 +150,15 @@ class BarPlotMaker(BaseMaker):
                                   <span style="font-size: 5px; white-space: pre-wrap;">\n@fdStrList</span>
                               </div>
                               <div>
+                                  <span style="font-size: 10px; color: #696;">($x, $y)</span>
+                              </div>
+                              <div>
                                   <span style="font-size: 5px; font-weight: bold;">stack:</span>
                                   <span style="font-size: 5px; white-space: pre-wrap;">\n@stackList</span>
                               </div>
                           </div>
                           """
-        title = "内存 mmap 监控占比图，总次数：%d 次，聚类后：%d 类，日志文件：%s" % (info.count, len(flat.numberList), info.fileName)
+        title = "内存监控占比图，总次数：%d 次，聚类后：%d 类，日志文件：%s" % (info.count, len(flat.numberList), info.fileName)
         plot_height = 1000
         if self.isExpand:
             plot_height *= 2

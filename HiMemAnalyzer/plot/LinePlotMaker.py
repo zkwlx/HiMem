@@ -119,7 +119,7 @@ class LinePlotMaker(BaseMaker):
                        </div>
                    </div>
                    """
-        title = "内存 mmap 监控趋势图，总次数：%d 次，日志文件：%s" % (info.count, info.fileName)
+        title = "内存监控趋势图，总次数：%d 次，日志文件：%s" % (info.count, info.fileName)
 
         graph = figure(plot_width=2100, plot_height=1000, title=title,
                        x_axis_label="日志索引", y_axis_label="内存总 mmap 量（字节）", tooltips=hoverToolHtml)

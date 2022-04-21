@@ -157,6 +157,12 @@ zkw@zkw-mint$: python3 ./HiMemAnalyzer/himem.py trace_1609069768.himem
 * [iqiyi/xHook](https://github.com/iqiyi/xHook)
 * [facebookincubator/profilo](https://github.com/facebookincubator/profilo)
 
+* * *
+
+欢迎关注我的公众号 `二叉树根子`，在这里可以看到不曾见过的 Android 底层技术。
+
+<img width="258" height="258" alt="公众号" src="docs/binary tree root.jpg">
+
 # License
 ```
 Copyright 2019 Square, Inc.
